@@ -1,0 +1,32 @@
+{
+  "name": "sunny-bunny-contracts",
+  "version": "0.0.1",
+  "description": "Create a contract with token (ERC20) for  that interacts with UniswapV2",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "truffle test",
+    "compile": "truffle compile",
+    "ganache": "ganache-cli -e 12000 -g 200000000000"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@uniswap/v2-core": "^1.0.1",
+    "@uniswap/v2-periphery": "^1.1.0-beta.0",
+    "bn.js": "^5.2.0",
+    "solc": "^0.8.6"
+  },
+  "devDependencies": {
+    "@openzeppelin/contracts": "^4.2.0",
+    "@openzeppelin/test-helpers": "^0.5.12",
+    "ganache-cli": "^6.12.2",
+    "ganache-time-traveler": "^1.0.16",
+    "prettier": "^2.3.2",
+    "prettier-plugin-solidity": "^1.0.0-beta.17",
+    "truffle": "^5.4.1",
+    "truffle-plugin-verify": "^0.5.11"
+  }
+}
