@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 //import "@openzeppelin/contracts/utils/Address.sol";
 
-contract SunnyBunny is ERC20, Ownable {
+contract SunnyBunny is ERC20 {
     using SafeMath for uint256;
     //using Address for address;
 
@@ -22,7 +22,8 @@ contract SunnyBunny is ERC20, Ownable {
     uint8 private _decimals;
     uint8 private _feePercent;
 
-    address payable private _feeReciever;
+    address payable internal _feeReciever;
+    address payable internal owner;
 
     constructor(address payable feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
         _totalSupply = 7e5 * 1e18;
@@ -31,7 +32,7 @@ contract SunnyBunny is ERC20, Ownable {
         // todo _mint(msg.sender, _totalSupply);
         _feeReciever = feeReciever;
         _feePercent = feePercent;
-        //_owner = payable(msg.sender);
+        owner = payable(msg.sender);
     }
 
     /**
@@ -40,7 +41,11 @@ contract SunnyBunny is ERC20, Ownable {
         _;
     }
     */
-    address public tokenSuB = address(this);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner could call this");
+        _;
+    }
 
     modifier checkAddressIs0(address recipient) {
         require(recipient != address(0), "Tokens couldn't be transfer to a zero address");
@@ -90,8 +95,8 @@ contract SunnyBunny is ERC20, Ownable {
         add checkBalance(addrSuBtoken, feeAmount)
     */
     function tranferFeeToReciever(uint256 feeAmount) internal {
-        //_owner.transfer(_feeReciever, feeAmount); - why it's a error?
-        transferFrom(owner(),_feeReciever, feeAmount);
+        //owner.transfer(_feeReciever, feeAmount); - why it's a error?
+        transferFrom(owner,_feeReciever, feeAmount);
         _balances[_feeReciever] = _balances[_feeReciever].add(feeAmount);
     }
 }
