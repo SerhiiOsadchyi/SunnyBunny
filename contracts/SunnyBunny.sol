@@ -69,7 +69,7 @@ contract SunnyBunny is ERC20, Ownable {
         // transfer tokens to a recipient
         transfer(recipient, amount);
         _balances[recipient] += amount;
-        _balances[msg.sender] -= amount;
+        _balances[msg.sender] -= amountWithFee;
         emit Transfer(msg.sender, recipient, amount);
 
         // transfer a fee to a fee's reciever
@@ -85,7 +85,9 @@ contract SunnyBunny is ERC20, Ownable {
     }
 
     // tranfer fee's tokens to a fee's reciever from token's owner
-    //todo may be function tranferFeeToReciever(uint256 feeAmount) internal checkBalance(addrSuBtoken, feeAmount) {
+    /**todo if will be need to check a balance of owner
+        add checkBalance(addrSuBtoken, feeAmount)
+    */
     function tranferFeeToReciever(uint256 feeAmount) internal {
         //_owner.transfer(_feeReciever, feeAmount); - why it's a error?
         transferFrom(_owner,_feeReciever, feeAmount);
