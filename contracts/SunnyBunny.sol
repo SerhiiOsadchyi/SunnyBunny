@@ -15,7 +15,7 @@ contract SunnyBunny is ERC20, Ownable {
     mapping(address => uint256) private _balances;
     //mapping(address => mapping(address => uint256)) private _allowances;
 
-    address payable public addrSuBtoken;
+    //address payable public addrSuBtoken;
     uint256 private _totalSupply;
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
@@ -34,10 +34,12 @@ contract SunnyBunny is ERC20, Ownable {
         _owner = payable(msg.sender);
     }
 
+    /** 
     modifier checkBalance(address sender, uint amount) {
         require(_balances[sender] >= amount, "Balance is not enough for a transfer");
         _;
     }
+    */
 
     modifier checkAddressIs0(address recipient) {
         require(recipient != address(0), "Tokens couldn't be transfer to a zero address");
@@ -48,7 +50,7 @@ contract SunnyBunny is ERC20, Ownable {
         _feeReciever = feeReciever;
     }
 
-    //A fee could not be bigger 15%
+    //A fee could not be bigger than 15%
     function setFeePercent(uint8 feePercent) public onlyOwner {
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
@@ -60,9 +62,9 @@ contract SunnyBunny is ERC20, Ownable {
     * to transfer(recipient, amountWithFee);
     */
     function transferWithFee(address recipient, uint256 amount) public payable checkAddressIs0(recipient) returns (bool) {
-        addrSuBtoken = payable(address(this));
+        //addrSuBtoken = payable(address(this));
         (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
-        require(_balances[msg.sender] >= amountWithFee, "Your balance is not enough");
+        //require(_balances[msg.sender] >= amountWithFee, "Your balance is not enough");
 
         // transfer tokens to a recipient
         transfer(recipient, amount);
