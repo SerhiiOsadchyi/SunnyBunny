@@ -34,7 +34,7 @@ contract SunnyBunny is ERC20, Ownable {
         _owner = payable(msg.sender);
     }
 
-    /** 
+    /**
     modifier checkBalance(address sender, uint amount) {
         require(_balances[sender] >= amount, "Balance is not enough for a transfer");
         _;
