@@ -20,9 +20,9 @@ contract SunnyBunny is ERC20, Ownable {
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
     uint8 private _decimals;
-    address payable private _feeReciever;
     uint8 private _feePercent;
-    address payable private _owner;
+
+    address payable private _feeReciever;
 
     constructor(address payable feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
         _totalSupply = 7e5 * 1e18;
@@ -31,7 +31,7 @@ contract SunnyBunny is ERC20, Ownable {
         // todo _mint(msg.sender, _totalSupply);
         _feeReciever = feeReciever;
         _feePercent = feePercent;
-        _owner = payable(msg.sender);
+        //_owner = payable(msg.sender);
     }
 
     /**
@@ -40,6 +40,7 @@ contract SunnyBunny is ERC20, Ownable {
         _;
     }
     */
+    address public tokenSuB = address(this);
 
     modifier checkAddressIs0(address recipient) {
         require(recipient != address(0), "Tokens couldn't be transfer to a zero address");
@@ -50,7 +51,7 @@ contract SunnyBunny is ERC20, Ownable {
         _feeReciever = feeReciever;
     }
 
-    //A fee could not be bigger than 15%
+    // A fee could not be bigger than 15%
     function setFeePercent(uint8 feePercent) public onlyOwner {
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
@@ -90,7 +91,7 @@ contract SunnyBunny is ERC20, Ownable {
     */
     function tranferFeeToReciever(uint256 feeAmount) internal {
         //_owner.transfer(_feeReciever, feeAmount); - why it's a error?
-        transferFrom(_owner,_feeReciever, feeAmount);
+        transferFrom(owner(),_feeReciever, feeAmount);
         _balances[_feeReciever] = _balances[_feeReciever].add(feeAmount);
     }
 }
