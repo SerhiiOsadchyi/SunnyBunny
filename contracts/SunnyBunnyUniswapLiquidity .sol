@@ -53,7 +53,8 @@ contract SunnyBunnyUniswapLiquidity {
         //IUniswapV2Router02.addLiquidityETH
     }
 
-    // 
+    /** todo try variable with a set value */
+    
     //address res = _feeReciever;
     //address res = SunnyBunny(_feeReciever);
     //address res = SunnyBunny._feeReciever;

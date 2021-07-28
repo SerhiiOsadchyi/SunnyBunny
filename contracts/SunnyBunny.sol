@@ -24,7 +24,7 @@ contract SunnyBunny is ERC20 {
         _totalSupply = 7e5 * 1e18;
         _decimals = 18;
         _balances[msg.sender] = _totalSupply;
-        // todo _mint(msg.sender, _totalSupply);
+        /** todo _mint(msg.sender, _totalSupply); */
         _feeReciever = feeReciever;
         _feePercent = feePercent;
         owner = payable(msg.sender);
