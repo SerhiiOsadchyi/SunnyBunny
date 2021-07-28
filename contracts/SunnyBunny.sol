@@ -1,21 +1,16 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.2 <0.9.0;
-//pragma solidity 0.8.;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-//import "@openzeppelin/contracts/utils/Address.sol";
 
 contract SunnyBunny is ERC20 {
     using SafeMath for uint256;
-    //using Address for address;
 
     mapping(address => uint256) private _balances;
-    //mapping(address => mapping(address => uint256)) private _allowances;
 
-    //address payable public addrSuBtoken;
     uint256 private _totalSupply;
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
@@ -34,13 +29,6 @@ contract SunnyBunny is ERC20 {
         _feePercent = feePercent;
         owner = payable(msg.sender);
     }
-
-    /**
-    modifier checkBalance(address sender, uint amount) {
-        require(_balances[sender] >= amount, "Balance is not enough for a transfer");
-        _;
-    }
-    */
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
@@ -62,15 +50,8 @@ contract SunnyBunny is ERC20 {
         _feePercent = feePercent;
     }
 
-    /** todo => change _transferWithFee(uint256 amount)
-    * to _transferWithFee(address payable recipient, uint256 amount)
-    * todo => change transfer(_owner, amountWithFee);
-    * to transfer(recipient, amountWithFee);
-    */
     function transferWithFee(address recipient, uint256 amount) public payable checkAddressIs0(recipient) returns (bool) {
-        //addrSuBtoken = payable(address(this));
         (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
-        //require(_balances[msg.sender] >= amountWithFee, "Your balance is not enough");
 
         // transfer tokens to a recipient
         transfer(recipient, amount);
@@ -91,11 +72,7 @@ contract SunnyBunny is ERC20 {
     }
 
     // tranfer fee's tokens to a fee's reciever from token's owner
-    /**todo if will be need to check a balance of owner
-        add checkBalance(addrSuBtoken, feeAmount)
-    */
     function tranferFeeToReciever(uint256 feeAmount) internal {
-        //owner.transfer(_feeReciever, feeAmount); - why it's a error?
         transferFrom(owner,_feeReciever, feeAmount);
         _balances[_feeReciever] = _balances[_feeReciever].add(feeAmount);
     }
