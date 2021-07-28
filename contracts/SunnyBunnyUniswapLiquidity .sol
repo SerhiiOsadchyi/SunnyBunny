@@ -7,17 +7,19 @@ pragma solidity >=0.6.2 <0.9.0;
 */
 
 import "./SunnyBunny.sol";
-import '@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol';
-import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 contract SunnyBunnyUniswapLiquidity {
 
     SunnyBunny public tokenSuB;
-    IWETH public weth;
+
+    IUniswapV2Pair iuniswapPair;
+    IWETH iweth;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
-    address private constant UNI_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address private constant UniswapV2Factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/router02/ */
     address private constant ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
@@ -37,24 +39,58 @@ contract SunnyBunnyUniswapLiquidity {
         owner = payable(msg.sender);
     }
 
+    IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
+
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
         _;
     }
     event Log(string message, uint vol);
 
+    function addPair() public returns(address) {
+
+    }
+
+    function addLiquidity(
+        address _token,
+        uint _amountTokenDesired,
+        uint _amountTokenMin,
+        uint _amountETHMin) external {
+        (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter(ROUTER02).addLiquidityETH(
+        _token,
+        _amountTokenDesired,
+        _amountTokenMin,
+        _amountETHMin,
+        address(this),
+        block.timestamp
+      );
+
+        emit Log("amount token", amountToken);
+        emit Log("amount ETH", amountETH);
+        emit Log("amount liquidity", liquidity);
+        //emit Log("amount liquidity", liqui);
+
+    }
+
+    /** todo remove if no need
+    function getEther(uint amount) payable public {
+        require(msg.value == amount, "ETH value not equal an amount needed");
+    }
+
     function addLiquidity(uint amountSuB, uint amountETH) external onlyOwner {
+
         tokenSuB.transfer(address(this), amountSuB);
-        IERC20(WETH).transfer(address(this), amountETH);
+        getEther(amountETH);
 
         tokenSuB.approve(ROUTER02, amountSuB);
         IERC20(WETH).approve(ROUTER02, amountETH);
 
         //IUniswapV2Router02.addLiquidityETH
     }
+    */
 
     /** todo try variable with a set value */
-    
+
     //address res = _feeReciever;
     //address res = SunnyBunny(_feeReciever);
     //address res = SunnyBunny._feeReciever;
