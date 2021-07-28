@@ -8,19 +8,16 @@ pragma solidity >=0.6.2 <0.9.0;
 
 import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 
 contract SunnyBunnyUniswapLiquidity {
 
     SunnyBunny public tokenSuB;
-    IUniswapV2Router02 iuniswapRouter;
-    IUniswapV2Pair iuniswapPair;
-    IWETH iweth;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
-    address private constant UniswapV2Factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+    address private constant UNISWAPV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/router02/ */
     address private constant ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
@@ -50,6 +47,7 @@ contract SunnyBunnyUniswapLiquidity {
     */
 
     IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
+    IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
@@ -75,14 +73,44 @@ contract SunnyBunnyUniswapLiquidity {
             block.timestamp
         );
 
-        emit Log("amount token", amountToken);
-        emit Log("amount ETH", amountETH);
+        emit Log("amount token  = ", amountToken);
+        emit Log("amount ETH  = ", amountETH);
         emit Log("amount liquidity", liquidity);
-        //emit Log("amount liquidity", liqui);
 
     }
 
-    /** todo remove if no need
+    function removeLiquidity(
+        uint _amountTokenMin,
+        uint _amountETHMin,
+        address _to
+    ) external onlyOwner {
+        // todo check address WETH before deploy
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+
+        uint liquidity = IERC20(pair).balanceOf(address(this));
+
+        (uint amountToken, uint amountETH) = removeLiquidityETH(
+            tokenSuB,
+            liquidity,
+            _amountTokenMin,
+            _amountETHMin,
+            _to, block.timestamp
+        );
+
+        emit Log("amount token  = ", amountToken);
+        emit Log("amount ETH  = ", amountETH);
+
+  }
+
+/** todo remove if no need
+    //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+    //import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+
+     //IUniswapV2Router02 iuniswapRouter;
+    //IUniswapV2Pair iuniswapPair;
+    //IWETH iweth;
+
+
     function getEther(uint amount) payable public {
         require(msg.value == amount, "ETH value not equal an amount needed");
     }
@@ -97,10 +125,9 @@ contract SunnyBunnyUniswapLiquidity {
 
         //IUniswapV2Router02.addLiquidityETH
     }
-    */
+*/
 
-    /** todo try variable with a set value */
-
+/** todo try variable with a set value */
     //address res = _feeReciever;
     //address res = SunnyBunny(_feeReciever);
     //address res = SunnyBunny._feeReciever;
