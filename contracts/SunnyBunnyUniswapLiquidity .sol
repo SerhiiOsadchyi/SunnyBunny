@@ -39,7 +39,7 @@ contract SunnyBunnyUniswapLiquidity {
         owner = payable(msg.sender);
     }
 
-    /// @author почем не работает так
+    /// @author почему не работает так?
     /**IUniswapV2Router02 iuniswapRouter
     *...
     *constructor(){
