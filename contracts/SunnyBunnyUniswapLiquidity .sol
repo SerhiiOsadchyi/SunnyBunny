@@ -11,7 +11,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 
 contract SunnyBunnyUniswapLiquidity {
 
@@ -25,20 +24,20 @@ contract SunnyBunnyUniswapLiquidity {
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/router02/ */
     address private constant ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
 
-    ///@author - это нужно не задавть здесь, а получать из сети. Правильно?
-    /** @dev Address from doc to https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
+    /** @dev Address WETH from doc to https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
     * Mainnet: 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     * Kovan: 0xd0a1e359811322d97991e03f863a0c30c2cf029c
     * Ropsten: 0xc778417e063141139fce010982780140aa0cd5ab
     * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
     */
-    //address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
+    address public immutable override WETH;
 
     address payable internal owner;
 
-    constructor(address token){
+    constructor(address token, address _WETH){
         tokenSuB = SunnyBunny(token);
         owner = payable(msg.sender);
+        WETH = _WETH;
     }
 
     /// @author почему не работает так?
@@ -52,8 +51,6 @@ contract SunnyBunnyUniswapLiquidity {
 
     IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
     IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
-    IWETH iweth = IWETH(iweth);
-    address private constant WETH = iweth();
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
@@ -113,9 +110,13 @@ contract SunnyBunnyUniswapLiquidity {
 
 /** todo remove if no need
     //import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
+    //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+
+      //address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
 
      //IUniswapV2Router02 iuniswapRouter;
     //IUniswapV2Pair iuniswapPair;
+    //    IWETH iweth = IWETH(iweth);
 
     function getEther(uint amount) payable public {
         require(msg.value == amount, "ETH value not equal an amount needed");
