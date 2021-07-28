@@ -64,15 +64,16 @@ contract SunnyBunnyUniswapLiquidity {
     function addLiquidity(
         uint _amountTokenDesired,
         uint _amountTokenMin,
-        uint _amountETHMin) external {
+        uint _amountETHMin
+    ) external onlyOwner {
         (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter(ROUTER02).addLiquidityETH(
-        tokenSuB,
-        _amountTokenDesired,
-        _amountTokenMin,
-        _amountETHMin,
-        address(this),
-        block.timestamp
-      );
+            tokenSuB,
+            _amountTokenDesired,
+            _amountTokenMin,
+            _amountETHMin,
+            address(this),
+            block.timestamp
+        );
 
         emit Log("amount token", amountToken);
         emit Log("amount ETH", amountETH);
