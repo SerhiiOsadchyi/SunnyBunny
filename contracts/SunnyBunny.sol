@@ -1,38 +1,29 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.2 <0.9.0;
+/// @author - можно такую версию pragma использовать?
+pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract SunnyBunny is ERC20 {
+contract SunnyBunny is ERC20, Ownable{
     using SafeMath for uint256;
 
     mapping(address => uint256) private _balances;
 
-    uint256 private _totalSupply;
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
-    uint8 private _decimals;
     uint8 private _feePercent;
 
-    address payable internal _feeReciever;
-    address payable internal owner;
+    address internal _feeReciever;
+    address internal owner;
 
-    constructor(address payable feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
-        _totalSupply = 7e5 * 1e18;
-        _decimals = 18;
-        _balances[msg.sender] = _totalSupply;
-        /** todo _mint(msg.sender, _totalSupply); */
+    constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
+        _mint(msg.sender, 7e5 * 1e18);
         _feeReciever = feeReciever;
         _feePercent = feePercent;
-        owner = payable(msg.sender);
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner could call this");
-        _;
+        owner = msg.sender;
     }
 
     modifier checkAddressIs0(address recipient) {
@@ -40,7 +31,7 @@ contract SunnyBunny is ERC20 {
         _;
     }
 
-    function setReciever(address payable feeReciever) public checkAddressIs0(feeReciever) onlyOwner {
+    function setReciever(address feeReciever) public checkAddressIs0(feeReciever) onlyOwner {
         _feeReciever = feeReciever;
     }
 
@@ -50,7 +41,7 @@ contract SunnyBunny is ERC20 {
         _feePercent = feePercent;
     }
 
-    function transferWithFee(address recipient, uint256 amount) public payable checkAddressIs0(recipient) returns (bool) {
+    function transferWithFee(address recipient, uint256 amount) public checkAddressIs0(recipient) returns (bool) {
         (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
 
         // transfer tokens to a recipient
@@ -76,4 +67,5 @@ contract SunnyBunny is ERC20 {
         transferFrom(owner,_feeReciever, feeAmount);
         _balances[_feeReciever] = _balances[_feeReciever].add(feeAmount);
     }
+
 }

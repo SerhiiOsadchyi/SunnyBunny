@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.2 <0.9.0;
+pragma solidity 0.8.6;
 
 /**import {factorySuB} from "./SunnyBunny.sol"; не работает - дока здесь
 * https://docs.soliditylang.org/en/v0.5.0/layout-of-source-files.html?highlight=import#import
@@ -11,10 +11,13 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 
 contract SunnyBunnyUniswapLiquidity {
 
     SunnyBunny public tokenSuB;
+    event Received(address, uint);
+    event Log(string message, uint vol);
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
     address private constant UNISWAPV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
@@ -22,13 +25,14 @@ contract SunnyBunnyUniswapLiquidity {
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/router02/ */
     address private constant ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
 
+    ///@author - это нужно не задавть здесь, а получать из сети. Правильно?
     /** @dev Address from doc to https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
     * Mainnet: 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     * Kovan: 0xd0a1e359811322d97991e03f863a0c30c2cf029c
     * Ropsten: 0xc778417e063141139fce010982780140aa0cd5ab
     * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
     */
-    address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
+    //address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
 
     address payable internal owner;
 
@@ -48,12 +52,12 @@ contract SunnyBunnyUniswapLiquidity {
 
     IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
     IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
+    IWETH iweth = IWETH(iweth);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
         _;
     }
-    event Log(string message, uint vol);
 
     function addPair() public returns(address) {
 
@@ -63,7 +67,7 @@ contract SunnyBunnyUniswapLiquidity {
         uint _amountTokenDesired,
         uint _amountTokenMin,
         uint _amountETHMin
-    ) external onlyOwner {
+    ) external payable onlyOwner {
         (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter(ROUTER02).addLiquidityETH(
             tokenSuB,
             _amountTokenDesired,
@@ -84,7 +88,7 @@ contract SunnyBunnyUniswapLiquidity {
         uint _amountETHMin,
         address _to
     ) external onlyOwner {
-        // todo check address WETH before deploy
+        /** @dev check address WETH before deploy*/
         address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
 
         uint liquidity = IERC20(pair).balanceOf(address(this));
@@ -100,7 +104,11 @@ contract SunnyBunnyUniswapLiquidity {
         emit Log("amount token  = ", amountToken);
         emit Log("amount ETH  = ", amountETH);
 
-  }
+    }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
 
 /** todo remove if no need
     //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
