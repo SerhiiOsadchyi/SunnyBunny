@@ -8,13 +8,14 @@ pragma solidity >=0.6.2 <0.9.0;
 
 import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
 contract SunnyBunnyUniswapLiquidity {
 
     SunnyBunny public tokenSuB;
-
+    IUniswapV2Router02 iuniswapRouter;
     IUniswapV2Pair iuniswapPair;
     IWETH iweth;
 
