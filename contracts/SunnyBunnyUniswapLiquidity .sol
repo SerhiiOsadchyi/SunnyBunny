@@ -52,12 +52,11 @@ contract SunnyBunnyUniswapLiquidity {
     }
 
     function addLiquidity(
-        address _token,
         uint _amountTokenDesired,
         uint _amountTokenMin,
         uint _amountETHMin) external {
         (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter(ROUTER02).addLiquidityETH(
-        _token,
+        tokenSuB,
         _amountTokenDesired,
         _amountTokenMin,
         _amountETHMin,
