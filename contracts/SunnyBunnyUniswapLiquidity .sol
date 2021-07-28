@@ -53,6 +53,7 @@ contract SunnyBunnyUniswapLiquidity {
     IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
     IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
     IWETH iweth = IWETH(iweth);
+    address private constant WETH = iweth();
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner could call this");
@@ -111,13 +112,10 @@ contract SunnyBunnyUniswapLiquidity {
     }
 
 /** todo remove if no need
-    //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
     //import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 
      //IUniswapV2Router02 iuniswapRouter;
     //IUniswapV2Pair iuniswapPair;
-    //IWETH iweth;
-
 
     function getEther(uint amount) payable public {
         require(msg.value == amount, "ETH value not equal an amount needed");
