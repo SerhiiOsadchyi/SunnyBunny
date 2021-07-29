@@ -27,6 +27,8 @@ contract SunnyBunny is ERC20, Ownable{
     mapping(address => uint256) private _undisposedFee;
 
     constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
+        require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
+        require(15 >= feePercent, "A fee might to be set to 15% or less");
         _mint(msg.sender, 7e5 * 1e18);
         _feeReciever = feeReciever;
         _feePercent = feePercent;
@@ -37,27 +39,35 @@ contract SunnyBunny is ERC20, Ownable{
         _;
     }
 
+    modifier checkFeePercent(uint8 feePercent) {
+        require(15 >= feePercent, "A fee might to be set to 15% or less");
+        _;
+    }
+
     function setReciever(address feeReciever) public checkAddressIs0(feeReciever) onlyOwner {
         _feeReciever = feeReciever;
     }
 
     // A fee could not be bigger than 15%
-    function setFeePercent(uint8 feePercent) public onlyOwner {
-        require(15 >= feePercent, "A fee might to be set to 15% or less");
+    function setFeePercent(uint8 feePercent) public onlyOwner checkFeePercent(feePercent) {
         _feePercent = feePercent;
     }
 
-    function transferWithFee(address recipient, uint256 amount) public checkAddressIs0(recipient) returns (bool) {
-        (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
+    function transferWithFee(address recipient, uint256 amount)
+        public
+        checkAddressIs0(recipient)
+        checkFeePercent(_feePercent)
+        returns (bool) {
+            (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
 
-        // transfer tokens to a recipient
-        transfer(owner(), amountWithFee);
-        emit TokensTransfered(msg.sender, recipient, amount, absoluteFee, _feePercent);
+            // transfer tokens to a recipient
+            transfer(owner(), amountWithFee);
+            emit TokensTransfered(msg.sender, recipient, amount, absoluteFee, _feePercent);
 
-        // increase inyernal balance of fee's reciver
-        _undisposedFee[_feeReciever] = absoluteFee;
+            // increase inyernal balance of fee's reciver
+            _undisposedFee[_feeReciever] = absoluteFee;
 
-        return true;
+            return true;
     }
 
     function calculateFee (uint256 amount) view internal returns (uint256, uint256){
