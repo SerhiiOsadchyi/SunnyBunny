@@ -41,22 +41,14 @@ contract SunnyBunny is ERC20, Ownable{
         _feePercent = feePercent;
     }
 
-    modifier checkAddressIs0(address recipient) {
-        require(recipient != address(0), "Tokens couldn't be transfer to a zero address");
-        _;
-    }
-
-    modifier checkFeePercent(uint8 feePercent) {
-        require(15 >= feePercent, "A fee might to be set to 15% or less");
-        _;
-    }
-
-    function setReciever(address feeReciever) public checkAddressIs0(feeReciever) onlyOwner {
+    function setReciever(address feeReciever) public onlyOwner {
+        require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
         _feeReciever = feeReciever;
     }
 
     // A fee could not be bigger than 15%
-    function setFeePercent(uint8 feePercent) public onlyOwner checkFeePercent(feePercent) {
+    function setFeePercent(uint8 feePercent) public onlyOwner {
+        require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
     }
 
@@ -98,23 +90,6 @@ contract SunnyBunny is ERC20, Ownable{
     }
 
     ///////////  Below standard ERC20 functions almost \\\\\\\\\\\\\
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5.05` (`505 / 10 ** 2`).
-     *
-     * Tokens usually opt for a value of 18, imitating the relationship between
-     * Ether and Wei. This is the value {ERC20} uses, unless this function is
-     * overridden;
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual override returns (uint8) {
-        return 18;
-    }
 
     /**
      * @dev See {IERC20-totalSupply}.
