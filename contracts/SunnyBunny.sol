@@ -10,20 +10,16 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract SunnyBunny is ERC20, Ownable{
     using SafeMath for uint256;
 
-    mapping(address => uint256) private _balances;
-
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
     uint8 private _feePercent;
 
     address internal _feeReciever;
-    address internal owner;
 
     constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
         _mint(msg.sender, 7e5 * 1e18);
         _feeReciever = feeReciever;
         _feePercent = feePercent;
-        owner = msg.sender;
     }
 
     modifier checkAddressIs0(address recipient) {
@@ -41,19 +37,15 @@ contract SunnyBunny is ERC20, Ownable{
         _feePercent = feePercent;
     }
 
-    function transferWithFee(address recipient, uint256 amount) public checkAddressIs0(recipient) returns (bool) {
+    function transferWithFee(address recipient, uint256 amount) public checkAddressIs0(recipient) returns (uint256) {
         (uint256 absoluteFee, uint256 amountWithFee) = calculateFee(amount);
 
         // transfer tokens to a recipient
         transfer(recipient, amount);
-        _balances[recipient] += amount;
-        _balances[msg.sender] -= amountWithFee;
         emit Transfer(msg.sender, recipient, amount);
 
         // transfer a fee to a fee's reciever
-        tranferFeeToReciever(absoluteFee);
-
-        return true;
+        return tranferFeeToReciever(absoluteFee);
     }
 
     function calculateFee (uint256 amount) view internal returns (uint256, uint256){
@@ -63,9 +55,8 @@ contract SunnyBunny is ERC20, Ownable{
     }
 
     // tranfer fee's tokens to a fee's reciever from token's owner
-    function tranferFeeToReciever(uint256 feeAmount) internal {
-        transferFrom(owner,_feeReciever, feeAmount);
-        _balances[_feeReciever] = _balances[_feeReciever].add(feeAmount);
+    function tranferFeeToReciever(uint256 feeAmount) public onlyOwner {
+        transferFrom(owner(), _feeReciever, feeAmount);
     }
 
 }
