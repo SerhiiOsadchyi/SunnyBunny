@@ -104,10 +104,6 @@ contract SunnyBunnyUniswapLiquidity {
 
     }
 
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }
-
 /** todo remove if no need
     //import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
     //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
@@ -132,6 +128,11 @@ contract SunnyBunnyUniswapLiquidity {
 
         //IUniswapV2Router02.addLiquidityETH
     }
+
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
+
 */
 
 /** todo try variable with a set value */
