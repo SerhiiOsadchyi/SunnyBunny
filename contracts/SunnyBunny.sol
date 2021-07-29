@@ -55,7 +55,7 @@ contract SunnyBunny is ERC20, Ownable{
     }
 
     // tranfer fee's tokens to a fee's reciever from token's owner
-    function tranferFeeToReciever(uint256 feeAmount) public onlyOwner {
+    function tranferFeeToReciever(uint256 feeAmount) public {
         transferFrom(owner(), _feeReciever, feeAmount);
     }
 
