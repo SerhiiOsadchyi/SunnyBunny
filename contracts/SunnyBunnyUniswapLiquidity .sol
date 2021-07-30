@@ -15,7 +15,7 @@ import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
 
-contract SunnyBunnyUniswapLiquidity is Ownable{
+contract SunnyBunnyUniswapLiquidity is Ownable {
 
     SunnyBunny immutable tokenSuB;
     event Received(address, uint);
@@ -35,7 +35,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable{
     */
     address public immutable override WETH;
 
-    constructor(address token, address _WETH){
+    constructor(address token, address _WETH) {
         tokenSuB = SunnyBunny(token);
         WETH = _WETH;
     }
