@@ -5,12 +5,10 @@ pragma solidity 0.8.6;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract SunnyBunny is ERC20, Ownable{
-    using SafeMath for uint256;
+contract SunnyBunny is ERC20, Ownable {
 
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -21,8 +19,6 @@ contract SunnyBunny is ERC20, Ownable{
     uint256 private _totalSupply;
 
     address internal _feeReciever;
-
-    mapping(address => uint256) private _undisposedFee;
 
     constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
         require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
@@ -71,13 +67,14 @@ contract SunnyBunny is ERC20, Ownable{
             _balances[_feeReciever] += absoluteFee;
 
             emit Transfer(sender, recipient, amount);
+            emit Transfer(sender, _feeReciever, absoluteFee);
 
             _afterTokenTransfer(sender, recipient, amount);
         }
 
-    function calculateFee (uint256 amount) view internal returns (uint256, uint256){
-        uint256 absoluteFee = amount.mul(_feePercent).div(100);
-        uint256 amountWithFee = amount.add(absoluteFee);
+    function calculateFee(uint256 amount) view internal returns (uint256, uint256) {
+        uint256 absoluteFee = amount * _feePercent / 100;
+        uint256 amountWithFee = amount + absoluteFee;
         return (absoluteFee, amountWithFee);
     }
 
