@@ -10,11 +10,14 @@ import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
+import "@uniswap/v2-periphery/contracts/UniswapV2Router01.sol";
 import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
 
-contract SunnyBunnyUniswapLiquidity {
+contract SunnyBunnyUniswapLiquidity is Ownable{
 
-    SunnyBunny public tokenSuB;
+    SunnyBunny immutable tokenSuB;
     event Received(address, uint);
     event Log(string message, uint vol);
 
@@ -32,11 +35,8 @@ contract SunnyBunnyUniswapLiquidity {
     */
     address public immutable override WETH;
 
-    address payable internal owner;
-
     constructor(address token, address _WETH){
         tokenSuB = SunnyBunny(token);
-        owner = payable(msg.sender);
         WETH = _WETH;
     }
 
@@ -46,27 +46,18 @@ contract SunnyBunnyUniswapLiquidity {
     *constructor(){
     *    ...
     *}
-    * iuniswapRouter = IUniswapV2Router02(iuniswapRouter)
+    * iuniswapRouter2 = IUniswapV2Router02(iuniswapRouter2)
     */
 
-    IUniswapV2Router02 iuniswapRouter = IUniswapV2Router02(iuniswapRouter);
+    IUniswapV2Router02 iuniswapRouter2 = IUniswapV2Router02(iuniswapRouter2);
     IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner could call this");
-        _;
-    }
-
-    function addPair() public returns(address) {
-
-    }
 
     function addLiquidity(
         uint _amountTokenDesired,
         uint _amountTokenMin,
         uint _amountETHMin
     ) external payable onlyOwner {
-        (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter(ROUTER02).addLiquidityETH(
+        (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter2(ROUTER02).addLiquidityETH(
             tokenSuB,
             _amountTokenDesired,
             _amountTokenMin,
@@ -85,7 +76,7 @@ contract SunnyBunnyUniswapLiquidity {
         uint _amountTokenMin,
         uint _amountETHMin,
         address _to
-    ) external onlyOwner {
+    ) external payable onlyOwner {
         /** @dev check address WETH before deploy*/
         address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
 
@@ -96,7 +87,8 @@ contract SunnyBunnyUniswapLiquidity {
             liquidity,
             _amountTokenMin,
             _amountETHMin,
-            _to, block.timestamp
+            address(this),
+            block.timestamp
         );
 
         emit Log("amount token  = ", amountToken);
@@ -104,35 +96,59 @@ contract SunnyBunnyUniswapLiquidity {
 
     }
 
+    // **** SWAP ****
+    // requires the initial amount to have already been sent to the first pair
+
+    //todo make sure:  **** Swap for SuB/ETH pair ****
+
+    //todo make sure: sell tokens at a maximum price
+    function swapExactETHForTokens(uint _amountOutMin) public payable {
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+
+        (address factory, uint amountOut, address path) =
+            iuniswapRouter2(ROUTER02).swapExactETHForTokens(_amountOutMin, pair, address(this), block.timestamp);
+
+        emit Log("amount out token  = ", amountOut);
+    }
+
+    //todo make sure: buy tokens at a minimum price
+     function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public payable {
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+
+        (address factory, uint amountOut, address path) =
+            iuniswapRouter2(ROUTER02).swapTokensForExactETH(_amountOut, _amountInMax, pair, address(this), block.timestamp);
+
+        emit Log("amount out token  = ", amountOut);
+    }
+
+    //todo make sure:  **** Swap for ETH/SuB pair ****
+
+    //todo make sure: sell tokens at maximum price
+     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public payable {
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+
+        (address factory, uint amountOut, address path) =
+            iuniswapRouter2(ROUTER02).swapExactTokensForETH(_amountIn, _amountOutMin, pair, address(this), block.timestamp);
+
+        emit Log("amount out token  = ", amountOut);
+    }
+
+    //todo make sure: buy tokens at market price
+     function swapETHForExactTokens(uint _amountOut) public payable {
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+
+        (address factory, uint amountOut, address path) =
+            iuniswapRouter2(ROUTER02).swapETHForExactTokens(_amountOut, pair, address(this), block.timestamp);
+
+        emit Log("amount out token  = ", amountOut);
+    }
+
+
+
 /** todo remove if no need
-    //import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
-    //import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
-
-      //address private constant WETH = 0xc778417E063141139Fce010982780140Aa0cD5Ab;
-
-     //IUniswapV2Router02 iuniswapRouter;
-    //IUniswapV2Pair iuniswapPair;
-    //    IWETH iweth = IWETH(iweth);
-
-    function getEther(uint amount) payable public {
-        require(msg.value == amount, "ETH value not equal an amount needed");
-    }
-
-    function addLiquidity(uint amountSuB, uint amountETH) external onlyOwner {
-
-        tokenSuB.transfer(address(this), amountSuB);
-        getEther(amountETH);
-
-        tokenSuB.approve(ROUTER02, amountSuB);
-        IERC20(WETH).approve(ROUTER02, amountETH);
-
-        //IUniswapV2Router02.addLiquidityETH
-    }
-
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
-
 */
 
 /** todo try variable with a set value */
