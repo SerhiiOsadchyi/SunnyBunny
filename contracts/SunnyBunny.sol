@@ -15,14 +15,6 @@ contract SunnyBunny is ERC20, Ownable{
     mapping(address => uint256) private _balances;
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    event TokensTransfered (
-        address sender,
-        address recipient,
-        uint amountToken,
-        uint amountFee,
-        uint percentFee
-    );
-
     string public _name = "Sunny Bunny";
     string public _symbol = "SuB";
     uint8 private _feePercent;
