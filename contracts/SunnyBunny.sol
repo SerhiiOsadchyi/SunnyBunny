@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 /// @author - можно такую версию pragma использовать?
-pragma solidity 0.8.6;
+pragma solidity 0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -18,26 +18,35 @@ contract SunnyBunny is ERC20, Ownable {
     uint8 private _feePercent;
     uint256 private _totalSupply;
 
-    address internal _feeReciever;
+    address internal _feeReceiver
+    ;
 
     constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
         require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _totalSupply = 7e5 * 1e18;
         _balances[_msgSender()] = _totalSupply;
-        _feeReciever = feeReciever;
+        _feeReceiver = feeReciever;
         _feePercent = feePercent;
     }
 
-    function setReciever(address feeReciever) public onlyOwner {
-        require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
-        _feeReciever = feeReciever;
+    function setReceiver(address feeReceiver) public onlyOwner {
+        require(feeReceiver != address(0), "Receiver\'s address couldn\'t be set to zero");
+        _feeReceiver = feeReceiver;
+    }
+
+    function getFeeReceiver() view public onlyOwner returns(address) {
+        return _feeReceiver;
     }
 
     // A fee could not be bigger than 15%
     function setFeePercent(uint8 feePercent) public onlyOwner {
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
+    }
+
+    function getFeePercent() view public onlyOwner returns(uint8) {
+        return _feePercent;
     }
 
     /**@dev override native ERC20 function */
@@ -64,10 +73,10 @@ contract SunnyBunny is ERC20, Ownable {
                 _balances[sender] = senderBalance - amountWithFee;
             }
             _balances[recipient] += amount;
-            _balances[_feeReciever] += absoluteFee;
+            _balances[_feeReceiver] += absoluteFee;
 
             emit Transfer(sender, recipient, amount);
-            emit Transfer(sender, _feeReciever, absoluteFee);
+            emit Transfer(sender, _feeReceiver, absoluteFee);
 
             _afterTokenTransfer(sender, recipient, amount);
         }

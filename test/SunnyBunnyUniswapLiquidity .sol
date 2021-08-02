@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.8.6;
+pragma solidity 0.8.0;
 
 /**import {factorySuB} from "./SunnyBunny.sol"; не работает - дока здесь
 * https://docs.soliditylang.org/en/v0.5.0/layout-of-source-files.html?highlight=import#import
@@ -78,7 +78,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         address _to
     ) external payable onlyOwner {
         /** @dev check address WETH before deploy*/
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+        address[]2 pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
 
         uint liquidity = IERC20(pair).balanceOf(address(this));
 
