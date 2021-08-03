@@ -8,6 +8,7 @@ pragma solidity 0.8.0;
 
 import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 //import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
 //import "@uniswap/v2-periphery/contracts/UniswapV2Router01.sol";
@@ -17,9 +18,13 @@ import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
 
 contract SunnyBunnyUniswapLiquidity is Ownable {
 
-    SunnyBunny immutable tokenSuB;
+    SunnyBunny immutable tokenSuB; //could be change once
     event Received(address, uint);
     event Log(string message, uint vol);
+
+    IUniswapV2Router02 private uniswapV2Router;
+    address private uniswapV2Pair;
+    address public tokenAddress;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
     address private constant UNISWAPV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
@@ -33,62 +38,50 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     * Ropsten: 0xc778417e063141139fce010982780140aa0cd5ab
     * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
     */
-    address public immutable override WETH;
+    address public immutable WETH;
 
-    constructor(address token, address _WETH) {
-        tokenSuB = SunnyBunny(token);
+    constructor(address _tokenAddress, address _WETH) {
+        tokenSuB = SunnyBunny(_tokenAddress);
+        tokenAddress = _tokenAddress;
         WETH = _WETH;
     }
 
-    /// @author почему не работает так?
-    /**IUniswapV2Router02 iuniswapRouter
-    *...
-    *constructor(){
-    *    ...
-    *}
-    * iuniswapRouter2 = IUniswapV2Router02(iuniswapRouter2)
-    */
+    IUniswapV2Router02 uniswapV2RouterAddress = IUniswapV2Router02(ROUTER02);
+    //IUniswapV2Router01 iuniswapRouter1 = IUniswapV2Router01(iuniswapRouter1);
+    //IUniswapV2Factory iuniswapFactory = IUniswapV2Factory(iuniswapFactory);
 
-    IUniswapV2Router02 iuniswapRouter2 = IUniswapV2Router02(iuniswapRouter2);
-    IUniswapV2Factory iuniswapFactory = iuniswapFactory(iuniswapRouter);
+    function addLiquidity(uint _amountToken) external payable onlyOwner {
 
-    function addLiquidity(
-        uint _amountTokenDesired,
-        uint _amountTokenMin,
-        uint _amountETHMin
-    ) external payable onlyOwner {
-        (uint amountToken, uint amountETH, uint liquidity) = iuniswapRouter2(ROUTER02).addLiquidityETH(
-            tokenSuB,
-            _amountTokenDesired,
-            _amountTokenMin,
-            _amountETHMin,
+        ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH.value(msg.value)(
+            tokenAddress,
+            _amountToken,
+            0, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
+            0, // for change add _amountETHMin to argument for this function and parent addLiquidity()
             address(this),
             block.timestamp
         );
 
         emit Log("amount token  = ", amountToken);
         emit Log("amount ETH  = ", amountETH);
-        emit Log("amount liquidity", liquidity);
+        emit Log("amount liquidity  = ", liquidity);
 
     }
 
-    function removeETHLiquidityFromToken(
-        uint _amountTokenMin,
-        uint _amountETHMin,
-        address _to
-    ) external payable onlyOwner {
-        /** @dev check address WETH before deploy*/
-        //address[]2 pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+    function removeETHLiquidity(address _tokenAddressLP) external onlyOwner {
 
-        //uint liquidity = IERC20(pair).balanceOf(address(this));
+        uint _liquidity = IERC20(_tokenAddressLP).balanceOf(address(this));
 
-        (uint amountToken, uint amountETH) = removeLiquidityETH(
-            tokenSuB,
-            liquidity,
-            _amountTokenMin,
-            _amountETHMin,
-            address(this),
-            block.timestamp
+        (uint amountToken, uint amountETH) = uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+            _tokenAddressLP,
+            _liquidity,
+            0, // for change add _amountTokenMin like argument for this function
+                //and parent removeETHLiquidityFromToken()
+            0, // for change add _amountETHMin to argument for this function
+            address(this), // for change add address _to like argument for this function
+                            //and parent removeETHLiquidityFromToken()
+            block.timestamp + 20
         );
 
         emit Log("amount token  = ", amountToken);
