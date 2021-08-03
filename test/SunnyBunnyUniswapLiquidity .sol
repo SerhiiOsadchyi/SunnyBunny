@@ -9,9 +9,9 @@ pragma solidity 0.8.0;
 import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
-import "@uniswap/v2-periphery/contracts/UniswapV2Router01.sol";
-import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
+//import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
+//import "@uniswap/v2-periphery/contracts/UniswapV2Router01.sol";
+//import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
 
@@ -72,15 +72,15 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     }
 
-    function removeLiquidity(
+    function removeETHLiquidityFromToken(
         uint _amountTokenMin,
         uint _amountETHMin,
         address _to
     ) external payable onlyOwner {
         /** @dev check address WETH before deploy*/
-        address[]2 pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+        //address[]2 pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
 
-        uint liquidity = IERC20(pair).balanceOf(address(this));
+        //uint liquidity = IERC20(pair).balanceOf(address(this));
 
         (uint amountToken, uint amountETH) = removeLiquidityETH(
             tokenSuB,

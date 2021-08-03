@@ -6,16 +6,21 @@ const SunnyBunny = artifacts.require('SunnyBunny');
 
 contract('Sunny Bunny token', function(accounts) {
   const ganache = new Ganache(web3);
- // afterEach('revert', ganache.revert);
 
-  const bn = (input) => web3.utils.toBN(input);
+  // todo - delete if not use anymore
+  // afterEach('revert', ganache.revert);
+
+  // todo - delete if not use anymore
+  const bn = (input) => web3.utils.toBN(input); // not use
   const assertBNequal = (bnOne, bnTwo) => assert.equal(bnOne.toString(), bnTwo.toString());
 
   const OWNER = accounts[0];
   const NOT_OWNER = accounts[1];
   const EXTRA_ADDRESS = accounts[2];
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  const baseUnit = bn('1000000000000000000');
+
+  // todo - delete if not use anymore
+  const baseUnit = bn('1000000000000000000'); // not use
 
   let feeReceiver = accounts[3];
   let feePercent = 10;
@@ -39,6 +44,7 @@ contract('Sunny Bunny token', function(accounts) {
       const amount = 10000; // fee is 10%
       await sunnyBunnyToken.transfer(NOT_OWNER, amount);
 
+       // todo - may be to change in assert.equal
       assertBNequal(await sunnyBunnyToken.balanceOf(NOT_OWNER), amount);
       assertBNequal(await sunnyBunnyToken.balanceOf(feeReceiver), 0);
     });
