@@ -41,10 +41,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
-    // get address of Token pair Uniswap V2 LP
-    address weth = uniswapV2Router.WETH();
-    address pair = uniswapV2Factory.getPair(tokenAddress, weth);
-
     function addLiquidity(uint _amountToken) external payable onlyOwner {
 
         //ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
@@ -65,6 +61,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     function removeETHLiquidity(uint _liquidity) external onlyOwner {
+        // todo Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        // get address of Token pair Uniswap V2 LP
+        address weth = uniswapV2Router.WETH();
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
         require(IERC20(pair).balanceOf(address(this)) >= _liquidity, "Liquidity is not enough");
 
         uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
@@ -87,6 +87,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: sell tokens at a maximum price
     function swapExactETHForTokens(uint _amountOutMin) public payable {
+        // todo Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
@@ -100,6 +102,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: buy tokens at a minimum price
      function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public {
+        address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
@@ -111,6 +114,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: sell tokens at maximum price
      function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
+        address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
@@ -123,6 +127,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: buy tokens at market price
      function swapETHForExactTokens(uint _amountOut) public payable {
+        address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
@@ -130,18 +135,9 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
     }
 
-
-
-/** todo remove if no need
-    receive() external payable {
-        emit Received(msg.sender, msg.value);
-    }
-*/
-
-/** todo try variable with a set value */
-    //address res = _feeReciever;
-    //address res = SunnyBunny(_feeReciever);
-    //address res = SunnyBunny._feeReciever;
-    //address res = tokenSuB(_feeReciever);
-    //address res = tokenSuB._feeReciever;
+    /** todo remove if no need
+        receive() external payable {
+            emit Received(msg.sender, msg.value);
+        }
+    */
 }
