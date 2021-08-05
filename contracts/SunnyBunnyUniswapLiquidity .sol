@@ -10,7 +10,7 @@ import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
+//import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 
 contract SunnyBunnyUniswapLiquidity is Ownable {
 
@@ -41,13 +41,15 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
+    // get address of Token pair Uniswap V2 LP
     address weth = uniswapV2Router.WETH();
+    address pair = uniswapV2Factory.getPair(tokenAddress, weth);
 
     function addLiquidity(uint _amountToken) external payable onlyOwner {
 
         //ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH.value(msg.value)(
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: msg.value}(
             tokenAddress,
             _amountToken,
             0, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
@@ -63,12 +65,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     function removeETHLiquidity(uint _liquidity) external onlyOwner {
-        // get address of Token pair Uniswap V2 LP
-        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
-        require(IERC20(tokenAddressLP).balanceOf(address(this) >= _liquidity), "Liquidity is not enough");
+        require(IERC20(pair).balanceOf(address(this)) >= _liquidity, "Liquidity is not enough");
 
-        (uint amountToken, uint amountETH) = uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
-            _tokenAddressLP,
+        uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+            pair,
             _liquidity,
             0, // for change add _amountTokenMin like argument for this function
                 //and parent removeETHLiquidityFromToken()
@@ -77,9 +77,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
                             //and parent removeETHLiquidityFromToken()
             block.timestamp + 20
         );
-
-        emit Log("amount token  = ", amountToken);
-        emit Log("amount ETH  = ", amountETH);
 
     }
 
@@ -90,44 +87,47 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: sell tokens at a maximum price
     function swapExactETHForTokens(uint _amountOutMin) public payable {
-        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
 
-        (address factory, uint amountOut, address path) =
-            iuniswapRouter2.swapExactETHForTokens(_amountOutMin, pair, address(this), block.timestamp);
+        /**@author use swapExactETHForTokens for token without fee */
+        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+                _amountOutMin, path, address(this), block.timestamp
+        );
 
-        emit Log("amount out token  = ", amountOut);
     }
 
     //todo make sure: buy tokens at a minimum price
-     function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public payable {
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+     function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public {
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
 
-        (address factory, uint amountOut, address path) =
-            iuniswapRouter2(ROUTER02).swapTokensForExactETH(_amountOut, _amountInMax, pair, address(this), block.timestamp);
-
-        emit Log("amount out token  = ", amountOut);
+        uniswapV2Router.swapTokensForExactETH(_amountOut, _amountInMax, path, address(this), block.timestamp);
     }
 
     //todo make sure:  **** Swap for ETH/SuB pair ****
 
     //todo make sure: sell tokens at maximum price
-     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public payable {
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, weth);
+     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
 
-        (address factory, uint amountOut, address path) =
-            iuniswapRouter2(ROUTER02).swapExactTokensForETH(_amountIn, _amountOutMin, pair, address(this), block.timestamp);
-
-        emit Log("amount out token  = ", amountOut);
+         /**@author use swapExactTokensForETH for token without fee */
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                _amountIn, _amountOutMin, path, address(this), block.timestamp
+        );
     }
 
     //todo make sure: buy tokens at market price
      function swapETHForExactTokens(uint _amountOut) public payable {
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
 
-        (address factory, uint amountOut, address path) =
-            iuniswapRouter2(ROUTER02).swapETHForExactTokens(_amountOut, pair, address(this), block.timestamp);
-
-        emit Log("amount out token  = ", amountOut);
+        uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
     }
 
 
