@@ -41,11 +41,20 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
-    function addLiquidity(uint _amountToken) external payable onlyOwner {
+    function addLiquidity(uint _amountToken, uint _amountWei) external payable onlyOwner {
+        // todo - remove it if no need more
+        //uint256 amountSendETH = msg.value;
+        //require(ERC20(tokenAddress).approve(ROUTER02, _amountToken), "Allowance transfer error");
+        //uint amountWei = _amountSendETH * 1e18;
+        require(msg.value >= _amountWei, "ETH amount is not enough");
 
-        //ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+        address weth = uniswapV2Router.WETH();
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: msg.value}(
+        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
+        IERC20(weth).approve(ROUTER02, _amountWei);
+
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: _amountWei}(
             tokenAddress,
             _amountToken,
             0, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
