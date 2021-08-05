@@ -8,13 +8,9 @@ pragma solidity 0.8.0;
 
 import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
-import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
-//import "@uniswap/v2-periphery/contracts/UniswapV2Router02.sol";
-//import "@uniswap/v2-periphery/contracts/UniswapV2Router01.sol";
-//import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import '@uniswap/v2-periphery/contracts/interfaces/IWETH.sol';
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-core/contracts/UniswapV2Factory.sol";
 
 contract SunnyBunnyUniswapLiquidity is Ownable {
 
@@ -23,7 +19,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     event Log(string message, uint vol);
 
     IUniswapV2Router02 private uniswapV2Router;
-    address private uniswapV2Pair;
+    IUniswapV2Factory private uniswapV2Factory;
+    //IUniswapV2Pair private tokenPair;
     address public tokenAddress;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
@@ -38,21 +35,17 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     * Ropsten: 0xc778417e063141139fce010982780140aa0cd5ab
     * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
     */
-    address public immutable WETH;
 
-    constructor(address _tokenAddress, address _WETH) {
+    constructor(address _tokenAddress) {
         tokenSuB = SunnyBunny(_tokenAddress);
         tokenAddress = _tokenAddress;
-        WETH = _WETH;
     }
 
-    IUniswapV2Router02 uniswapV2RouterAddress = IUniswapV2Router02(ROUTER02);
-    //IUniswapV2Router01 iuniswapRouter1 = IUniswapV2Router01(iuniswapRouter1);
-    //IUniswapV2Factory iuniswapFactory = IUniswapV2Factory(iuniswapFactory);
+    address weth = uniswapV2Router.WETH();
 
     function addLiquidity(uint _amountToken) external payable onlyOwner {
 
-        ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+        //ERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH.value(msg.value)(
             tokenAddress,
@@ -69,9 +62,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     }
 
-    function removeETHLiquidity(address _tokenAddressLP) external onlyOwner {
-
-        uint _liquidity = IERC20(_tokenAddressLP).balanceOf(address(this));
+    function removeETHLiquidity(uint _liquidity) external onlyOwner {
+        // get address of Token pair Uniswap V2 LP
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
+        require(IERC20(tokenAddressLP).balanceOf(address(this) >= _liquidity), "Liquidity is not enough");
 
         (uint amountToken, uint amountETH) = uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
             _tokenAddressLP,
@@ -96,10 +90,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: sell tokens at a maximum price
     function swapExactETHForTokens(uint _amountOutMin) public payable {
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
 
         (address factory, uint amountOut, address path) =
-            iuniswapRouter2(ROUTER02).swapExactETHForTokens(_amountOutMin, pair, address(this), block.timestamp);
+            iuniswapRouter2.swapExactETHForTokens(_amountOutMin, pair, address(this), block.timestamp);
 
         emit Log("amount out token  = ", amountOut);
     }
@@ -118,7 +112,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //todo make sure: sell tokens at maximum price
      function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public payable {
-        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, WETH);
+        address pair = iuniswapFactory(UNISWAPV2_FACTORY).getPair(tokenSuB, weth);
 
         (address factory, uint amountOut, address path) =
             iuniswapRouter2(ROUTER02).swapExactTokensForETH(_amountIn, _amountOutMin, pair, address(this), block.timestamp);
