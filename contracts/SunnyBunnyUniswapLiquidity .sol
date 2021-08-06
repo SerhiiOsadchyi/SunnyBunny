@@ -41,25 +41,30 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
-    function addLiquidity(uint _amountToken, uint _amountWei) external payable onlyOwner {
-        // todo - remove it if no need more
-        //uint256 amountSendETH = msg.value;
-        //require(ERC20(tokenAddress).approve(ROUTER02, _amountToken), "Allowance transfer error");
-        //uint amountWei = _amountSendETH * 1e18;
-        require(msg.value >= _amountWei, "ETH amount is not enough");
+    function transferTokensToContract(uint _amountToken, address _tokenAddress) public {
+        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+    }
 
-        address weth = uniswapV2Router.WETH();
-        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+    function transferETHToContract() public payable {
+    }
+
+    function addLiquid(uint _amountToken) public payable {
+        // todo - remove it if no need more
+        uint256 amountSendETH = msg.value;
+        //address weth = uniswapV2Router.WETH();
+
+        transferTokensToContract(_amountToken, tokenAddress);
+        //transferTokensToContract(amountSendETH, weth);
 
         IERC20(tokenAddress).approve(ROUTER02, _amountToken);
-        IERC20(weth).approve(ROUTER02, _amountWei);
+        //IERC20(weth).approve(ROUTER02, amountSendETH);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: _amountWei}(
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: amountSendETH}(
             tokenAddress,
             _amountToken,
-            0, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
-            0, // for change add _amountETHMin to argument for this function and parent addLiquidity()
-            address(this),
+            1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
+            1, // for change add _amountETHMin to argument for this function and parent addLiquidity()
+            msg.sender,
             block.timestamp
         );
 
@@ -144,9 +149,31 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
     }
 
-    /** todo remove if no need
+    /** todo remove if no need */
         receive() external payable {
             emit Received(msg.sender, msg.value);
         }
-    */
+
+    /** ============  SERVICE FUNCTIONS ============= */
+
+       function getAddressContract()  view external returns(address) {
+        //IERC20(tokenAddress).approve(address(this), _amountToken);
+        return address(this);
+    }
+
+    function getTokensBalanceOnContract() view external returns(uint256) {
+        return IERC20(tokenAddress).balanceOf(address(this));
+    }
+
+    function getTokensBalanceSender() view external returns(uint256) {
+        return IERC20(tokenAddress).balanceOf(msg.sender);
+    }
+
+    function getTokensAllowance() view external returns(uint256) {
+        return IERC20(tokenAddress).allowance(msg.sender, address(this));
+    }
+
+    function getETHContractBalance() view external returns(uint256) {
+        return address(this).balance;
+    }
 }
