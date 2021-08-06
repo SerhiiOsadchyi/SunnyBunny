@@ -48,50 +48,50 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function transferETHToContract() public payable {
     }
 
-    function addLiquid(uint _amountToken, uint _amountETH) public payable {
+    /**function addLiquid(uint _amountToken, uint _amountETH) public payable {
         // todo - remove it if no need more
         require(msg.value >= _amountETH, "ETH is not enough");
-        uint256 amountSendETH = msg.value;
+        //uint256 amountSendETH = msg.value;
         address weth = uniswapV2Router.WETH();
 
         transferTokensToContract(_amountToken, tokenAddress);
-        transferTokensToContract(amountSendETH, weth);
+        transferTokensToContract(_amountETH, weth);
 
-        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
-        IERC20(weth).approve(ROUTER02, amountSendETH);
+        //IERC20(tokenAddress).approve(ROUTER02, _amountToken);
+        //IERC20(weth).approve(ROUTER02, _amountETH);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidity(
             tokenAddress,
             weth,
             _amountToken,
-            amountSendETH,
+            _amountETH,
             1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
             1, // for change add _amountETHMin to argument for this function and parent addLiquidity()
             msg.sender,
             block.timestamp
         );
+    }*/
 
-    /** Use ETH
+    /** Use ETH */
     function addLiquid(uint _amountToken) public payable {
         // todo - remove it if no need more
         uint256 amountSendETH = msg.value;
         //address weth = uniswapV2Router.WETH();
 
-        transferTokensToContract(_amountToken, tokenAddress);
+        //transferTokensToContract(_amountToken, tokenAddress);
         //transferTokensToContract(amountSendETH, weth);
 
-        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
+        //IERC20(tokenAddress).approve(ROUTER02, _amountToken);
         //IERC20(weth).approve(ROUTER02, amountSendETH);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value: amountSendETH}(
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
             _amountToken,
             1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
             1, // for change add _amountETHMin to argument for this function and parent addLiquidity()
-            msg.sender,
+            address(this),
             block.timestamp
         );
-        */
 
         emit Log("amount token  = ", amountToken);
         emit Log("amount ETH  = ", amountETH);
