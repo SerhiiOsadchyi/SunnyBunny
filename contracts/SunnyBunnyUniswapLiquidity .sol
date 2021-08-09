@@ -41,6 +41,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
+    //IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(uniswapV2Router);
+
     function transferTokensToContract(uint _amountToken, address _tokenAddress) public {
         IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
     }
@@ -48,7 +50,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function transferETHToContract() public payable {
     }
 
-    /**function addLiquid(uint _amountToken, uint _amountETH) public payable {
+    function addLiquid(uint _amountToken, uint _amountETH) public payable {
         // todo - remove it if no need more
         require(msg.value >= _amountETH, "ETH is not enough");
         //uint256 amountSendETH = msg.value;
@@ -57,10 +59,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         transferTokensToContract(_amountToken, tokenAddress);
         transferTokensToContract(_amountETH, weth);
 
-        //IERC20(tokenAddress).approve(ROUTER02, _amountToken);
-        //IERC20(weth).approve(ROUTER02, _amountETH);
+        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
+        IERC20(weth).approve(ROUTER02, _amountETH);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidity(
+        (uint amountToken, uint amountETH, uint liquidity) = IUniswapV2Router02(ROUTER02).addLiquidity(
             tokenAddress,
             weth,
             _amountToken,
@@ -70,9 +72,13 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
             msg.sender,
             block.timestamp
         );
-    }*/
 
-    /** Use ETH */
+        emit Log("amount token  = ", amountToken);
+        emit Log("amount ETH  = ", amountETH);
+        emit Log("amount liquidity  = ", liquidity);
+    }
+
+    /** Use ETH 
     function addLiquid(uint _amountToken) public payable {
         // todo - remove it if no need more
         uint256 amountSendETH = msg.value;
@@ -84,7 +90,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         //IERC20(tokenAddress).approve(ROUTER02, _amountToken);
         //IERC20(weth).approve(ROUTER02, amountSendETH);
 
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
+        (uint amountToken, uint amountETH, uint liquidity) = IUniswapV2Router02(ROUTER02).addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
             _amountToken,
             1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
@@ -97,7 +103,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         emit Log("amount ETH  = ", amountETH);
         emit Log("amount liquidity  = ", liquidity);
 
-    }
+    }*/
 
     function removeETHLiquidity(uint _liquidity) external onlyOwner {
         // todo Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
