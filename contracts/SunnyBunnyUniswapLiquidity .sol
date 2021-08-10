@@ -103,7 +103,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     }
 
-    function removeETHLiquidity(uint _liquidity) external {
+    function removeLiquid(uint _liquidity) external {
         // todo Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         // get address of Token pair Uniswap V2 LP
         address weth = uniswapV2Router.WETH();

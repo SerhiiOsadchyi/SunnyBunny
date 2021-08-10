@@ -1,10 +1,24 @@
 const Ganache = require('./helpers/ganache');
-const deployUniswap = require('./helpers/deployUniswap');
+//const deployUniswap = require('./helpers/deployUniswap');
 const { send, expectEvent, expectRevert, constants } = require("@openzeppelin/test-helpers");
 
 const SunnyBunny = artifacts.require('SunnyBunny');
-const SunnyBunnyUniswapLiquidity = artifacts.require('SunnyBunnyUniswapLiquidity ');
-const IUniswapV2Pair = artifacts.require('IUniswapV2Pair');
+const SunnyBunnyUniswapLiquidity = artifacts.require('SunnyBunnyUniswapLiquidity');
+//const IUniswapV2Pair = artifacts.require('IUniswapV2Pair');
+
+/** Address from doc https://uniswap.org/docs/v2/smart-contracts/router02/
+address private constant ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+
+ Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address
+ address private constant UNISWAPV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+*/
+
+ /** @dev Address WETH from doc to https://blog.0xproject.com/canonical-weth-a9aa7d0279dd
+    * Mainnet: 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    * Kovan: 0xd0a1e359811322d97991e03f863a0c30c2cf029c
+    * Ropsten: 0xc778417e063141139fce010982780140aa0cd5ab
+    * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
+    */
 
 contract('Sunny Bunny token', function(accounts) {
   const ganache = new Ganache(web3);
@@ -15,21 +29,21 @@ contract('Sunny Bunny token', function(accounts) {
   const bn = (input) => web3.utils.toBN(input);
   const assertBNequal = (bnOne, bnTwo) => assert.equal(bnOne.toString(), bnTwo.toString());
 
+  const WETH = 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2;
+  const ROUTER02 = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
+  const UNISWAPV2_FACTORY = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
   const OWNER = accounts[0];
   const NOT_OWNER = accounts[1];
   const EXTRA_ADDRESS = accounts[2];
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
-  const baseUnit = bn('1000000000000000000');
-  const TOKEN_AMOUNT = pow(10, 18);
+  const BASE_UNIT = bn('1000000000000000000');
+  const TOKEN_AMOUNT = BASE_UNIT;
 
   let feeReceiver = accounts[3];
   let feePercent = 10;
-  let sunnyBunnyToken;
+  let SuBToken;
 
   let uniswapPair;
-  let uniswapFactory;
-  let uniswapRouter;
-  let weth;
 
   // todo - delete if not use anymore
  /**  address public tokenUniswapPair;
@@ -43,11 +57,6 @@ contract('Sunny Bunny token', function(accounts) {
     }*/
 
   before('setup others', async function() {
-    const contracts = await deployUniswap(accounts);
-    uniswapFactory = contracts.uniswapFactory;
-    uniswapRouter = contracts.uniswapRouter;
-    weth = contracts.weth;
-
     // todo - delete if not use anymore
     //await SuBToken.createUniswapPair();
     //const sunnyBunnyTokenInstance = await sunnyBunnyToken.deployed();
@@ -60,28 +69,34 @@ contract('Sunny Bunny token', function(accounts) {
     // deploy and setup main contracts
 
     sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent);
-    SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(SuBToken.address);
+    sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(sunnyBunnyToken.address);
 
     // send ETH to cover tx fee
     await send.ether(OWNER, NOT_OWNER, 1);
 
-    await SuBToken.transfer(NOT_OWNER, TOKEN_AMOUNT, { from: OWNER });
-    await SuBToken.approve(SunnyBunnyUniswapLiquidity.address, TOKEN_A_AMOUNT, { from: NOT_OWNER });
+    await sunnyBunnyToken.transfer(NOT_OWNER, TOKEN_AMOUNT, { from: OWNER });
+    await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: NOT_OWNER });
 
   });
 
   describe('General tests', async () => {
 
-    it('add liquidity and remove liquidity', async () => {
+    it('add liquidity', async () => {
         const tokensToLiquid = TOKEN_AMOUNT / 2;
-        let tx = await SunnyBunnyUniswapLiquidity.addLiquid(tokensToLiquid, {from: NOT_OWNER, value: web3.toWei(1, "ether")});
+        let tx = await sunnyBunnyUniswapLiquidity.addLiquid(
+          bn(tokensToLiquid),
+          {from: NOT_OWNER, value: web3.utils.toWei('1', "ether")}
+          );
+
           console.log("=== add liquidity ===");
           for (const log of tx.logs) {
             console.log(`${log.args.message} ${log.args.val}`);
           }
+    });
 
+    it('remove liquidity', async () => {
           const tokensToRemoveLiquid = TOKEN_AMOUNT / 20;
-          tx = await contract.removeLiquidity(tokensToRemoveLiquid, {from: NOT_OWNER});
+          let tx = await sunnyBunnyUniswapLiquidity.removeLiquid(bn(tokensToRemoveLiquid), {from: NOT_OWNER});
           console.log("=== remove liquidity ===");
           for (const log of tx.logs) {
             console.log(`${log.args.message} ${log.args.val}`);
