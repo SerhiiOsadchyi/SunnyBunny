@@ -1,12 +1,15 @@
-const UniswapFactory = artifacts.require('UniswapFactory');
-const UniswapWETH = artifacts.require('UniswapWETH');
-const UniswapRouter = artifacts.require('UniswapRouter');
+const UniswapV2Factory = artifacts.require('IUniswapV2Factory');
+//const UniswapV2Factory = artifacts.require('IUniswapV2Factory');
+//const UniswapWETH = artifacts.require('WETH9');
+const UniswapWETH = artifacts.require('IWETH');
+//const UniswapFactory = artifacts.require('UniswapFactory');
+const UniswapV2Router02 = artifacts.require('IUniswapV2Router02');
 
 async function deployUniswap(accounts) {
   const feeToSetter = accounts[0];
-  const uniswapFactory = await UniswapFactory.new(feeToSetter);
+  const uniswapFactory = await UniswapV2Factory.new(feeToSetter);
   const weth = await UniswapWETH.new();
-  const uniswapRouter = await UniswapRouter.new(uniswapFactory.address, weth.address);
+  const uniswapRouter = await UniswapV2Router02.new(uniswapFactory.address, weth.address);
 
   return { uniswapFactory, weth, uniswapRouter };
 }
