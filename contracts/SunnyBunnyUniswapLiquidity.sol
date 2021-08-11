@@ -20,6 +20,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     IUniswapV2Router02 private uniswapV2Router;
     IUniswapV2Factory private uniswapV2Factory;
+    IWETH private WETH;
     //IUniswapV2Pair private tokenPair;
     address public tokenAddress;
 
