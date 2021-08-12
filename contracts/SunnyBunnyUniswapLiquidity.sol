@@ -40,6 +40,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     constructor(address _tokenAddress) {
         tokenSuB = SunnyBunny(_tokenAddress);
         tokenAddress = _tokenAddress;
+        uniswapV2Router = IUniswapV2Router02(ROUTER02);
+        uniswapV2Factory = IUniswapV2Factory(UNISWAPV2_FACTORY);
     }
 
     //IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(uniswapV2Router);
@@ -50,6 +52,18 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     function transferETHToContract() public payable {
     }
+
+    //todo почему так не работает?
+    /**address public tokenUniswapPair;
+
+    function createUniswapPair() public onlyOwner returns (address) {
+        require(tokenUniswapPair == address(0), "Token: pool already created");
+        tokenUniswapPair = uniswapV2Factory.createPair(
+            address(uniswapV2Router.WETH()),
+            tokenAddress
+        );
+        return tokenUniswapPair;
+    }*/
 
     /** Convert ETH to WETH
     function addLiquid(uint _amountToken, uint _amountETH) public payable {
@@ -89,7 +103,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
         IERC20(tokenAddress).approve(ROUTER02, _amountToken);
 
-        (uint amountToken, uint amountETH, uint liquidity) = IUniswapV2Router02(ROUTER02).addLiquidityETH{value:  amountSendETH}(
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
             _amountToken,
             1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()

@@ -7,6 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 
 contract SunnyBunny is ERC20, Ownable {
 
@@ -29,6 +32,9 @@ contract SunnyBunny is ERC20, Ownable {
         _feeReceiver = feeReciever;
         _feePercent = feePercent;
     }
+
+    IUniswapV2Factory public uniswapFactory;
+    IUniswapV2Router02 public uniswapRouter;
 
     function setReceiver(address feeReceiver) public onlyOwner {
         require(feeReceiver != address(0), "Receiver\'s address couldn\'t be set to zero");
@@ -85,6 +91,17 @@ contract SunnyBunny is ERC20, Ownable {
         uint256 absoluteFee = amount * _feePercent / 100;
         uint256 amountWithFee = amount + absoluteFee;
         return (absoluteFee, amountWithFee);
+    }
+
+    address public tokenUniswapPair;
+
+    function createUniswapPair() public returns (address) {
+        require(tokenUniswapPair == address(0), "Token: pool already created");
+        tokenUniswapPair = uniswapFactory.createPair(
+            address(uniswapRouter.WETH()),
+            address(this)
+        );
+        return tokenUniswapPair;
     }
 
     ///////////  Below standard ERC20 functions almost \\\\\\\\\\\\\

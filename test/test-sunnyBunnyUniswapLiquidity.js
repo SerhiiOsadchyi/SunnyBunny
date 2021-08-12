@@ -2,7 +2,10 @@ const Ganache = require('./helpers/ganache');
 const { send, expectEvent, expectRevert, constants } = require('@openzeppelin/test-helpers');
 const UniswapV2Router02 =  artifacts.require('@uniswap/v2-periphery/UniswapV2Router02');
 const UniswapV2Factory = artifacts.require('@uniswap/v2-core/UniswapV2Factory');
-const UniswapV2Pair = artifacts.require('@uniswap/v2-core/UniswapV2Pair');
+const IUniswapV2Factory = artifacts.require('@uniswap/v2-core/IUniswapV2Factory');
+//const UniswapV2Pair = artifacts.require('@uniswap/v2-core/UniswapV2Pair');
+const IUniswapV2Pair = artifacts.require('@uniswap/v2-core/IUniswapV2Pair');
+//const IWETH = artifacts.require('@uniswap/v2-periphery/IWETH');
 
 const SunnyBunny = artifacts.require('SunnyBunny');
 const SunnyBunnyUniswapLiquidity = artifacts.require('SunnyBunnyUniswapLiquidity');
@@ -41,81 +44,138 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
   before('setup others', async function() {
 
-    weth = WETH;
-
     // deploy and setup main contracts
     uniswapFactory = await UniswapV2Factory.new(OWNER);
+
     console.log('UniswapFactory = ' + uniswapFactory);
 
     sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent);
+
+    let weth = WETH;
+    /*const weth = await IWETH.new();
+      console.log('weth = ' + weth);
+      console.log('weth address = ' + weth.address);
+      const uniswapRouter = await UniswapRouter.new(uniswapFactory.address, weth.address);
+    */
+
     console.log('sunnyBunnyToken = ' + sunnyBunnyToken);
+    console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
 
     uniswapRouter = await UniswapV2Router02.new(uniswapFactory.address, weth);
+    weth = await uniswapRouter.WETH()
+    console.log('weth = ' + weth);
+
     console.log('uniswapRouter = ' + uniswapRouter);
 
     sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(sunnyBunnyToken.address);
+
     console.log('sunnyBunnyUniswapLiquidity = ' + sunnyBunnyUniswapLiquidity);
     console.log('sunnyBunnyUniswapLiquidity.address = ' + sunnyBunnyUniswapLiquidity.address);
 
     //@author create a pair in the contract
-    pair = await uniswapFactory.createPair(weth, sunnyBunnyToken.address);
-    pairAddress = pair.tx;
+    //todo don't return a pair in the contract - why?
+    /*await uniswapFactory.createPair(weth, sunnyBunnyToken.address);
+      pair = await uniswapFactory.createPair(weth, sunnyBunnyToken.address);
+      await sunnyBunnyUniswapLiquidity.createUniswapPair();
+      pair = await sunnyBunnyUniswapLiquidity.tokenUniswapPair();
+      pairAddress = await sunnyBunnyUniswapLiquidity.tokenUniswapPair();
+      pairAddress = pair.tx;
+    */
+    await sunnyBunnyToken.createUniswapPair();
+    pairAddress = await sunnyBunnyToken.tokenUniswapPair();
+
     console.log('===========   pair   =============');
     console.log('pairAddress = ' + pairAddress);
-    for(let index in pair) {
-      console.log('index = ' + index);
-      console.log('pairAddressToken = ' + pair[index]);
-    }
-    //console.log('UniswapV2Router02 = ' + UniswapV2Router02);
-
-    // send ETH to cover tx fee
-    //await send.ether(OWNER, NOT_OWNER, 1);
-
-    //await sunnyBunnyToken.approve(uniswapRouter.address, TOKEN_AMOUNT, { from: OWNER });
-
-    /**await sunnyBunnyToken.transferFrom(OWNER, sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT);
-    let balanceLiquid = await sunnyBunnyToken.balanceOf(sunnyBunnyUniswapLiquidity.address);
-    console.log('balanceLiquid = ' + balanceLiquid);*/
+    /*console.log('pairAddress = ' + pairAddress);
+      for(let index in pair) {
+        console.log('index = ' + index);
+        console.log('pairAddressToken = ' + pair[index]);
+      }
+    */
 
     let res = await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT);
+
     console.log('===========   approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT)   =============');
     console.log('approved res = ' + res);
     for(let index in res) {
       console.log('index = ' + index);
       console.log('approved res = ' + res[index]);
     }
-
-    //let approvedTokensToUniswapLiquid = await allowance(OWNER, sunnyBunnyUniswapLiquidity.address);
-    //console.log('approvedTokensToUniswapLiquid = ' + approvedTokensToUniswapLiquid);
-
-    let res2 = await sunnyBunnyToken.approve(ROUTER02, TOKEN_AMOUNT);
-    console.log('===========   approve(ROUTER02, TOKEN_AMOUNT)  =============');
-    console.log('approved res2 = ' + res2);
-    for(let index in res2) {
+    let resReceipt = res['receipt'];
+    for(let index in resReceipt) {
       console.log('index = ' + index);
-      console.log('approved res = ' + res2[index]);
+      console.log('approved res = ' + resReceipt[index]);
     }
-    //let approvedTokensToRouter = await allowance(OWNER, ROUTER02);
-    //console.log('approvedTokensToRouter = ' + approvedTokensToRouter);
-    //await sunnyBunnyToken.approve(ROUTER02, TOKEN_AMOUNT);
-    //approvedTokensToRouter = await allowance(OWNER, ROUTER02);
-    //console.log('approvedTokensToRouter = ' + approvedTokensToRouter);
-    //await sunnyBunnyToken.approve(uniswapRouter.address, TOKEN_AMOUNT);
+
+    //todo - не работает allowance - ReferenceError: allowance is not defined
+    /*let approvedTokensToUniswapLiquid = await allowance(OWNER, sunnyBunnyUniswapLiquidity.address);
+      console.log('approvedTokensToUniswapLiquid = ' + approvedTokensToUniswapLiquid);
+    */
+
+    let resRouter = await sunnyBunnyToken.approve(uniswapFactory.address, TOKEN_AMOUNT);
+
+    console.log('===========   approve(ROUTER02, TOKEN_AMOUNT)  =============');
+    console.log('approved Router = ' + resRouter);
+    for(let index in resRouter) {
+      console.log('index = ' + index);
+      console.log('approved Router = ' + resRouter['receipt'][index]);
+    }
+    for(let index in resRouter['receipt']) {
+      console.log('index = ' + index);
+      console.log('approved resRouter = ' + resRouter['receipt'][index]);
+    }
+
+    //todo - не работает allowance - ReferenceError: allowance is not defined
+    /*let approvedTokensToRouter = await allowance(OWNER, ROUTER02);
+      console.log('approvedTokensToRouter = ' + approvedTokensToRouter);
+    */
 
     let balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
     let balanceETH = await web3.eth.getBalance(NOT_OWNER);
+
     console.log('balance = ' + balance);
     console.log('balanceETH = ' + balanceETH);
-
-    
-    //console.log('UniswapV2Factory = ' + UniswapV2Factory);
 
   });
 
   describe('General tests', async () => {
 
     //Use liquidity from original Uniswap
-    it('add liquidity', async () => {
+    it('should be possible to add liquidity on pair', async () => {
+      const liquidityTokensAmount = bn('10').mul(BASE_UNIT); // 10 tokens
+      const liquidityEtherAmount = bn('1').mul(BASE_UNIT); // 1 ETH
+
+      console.log('pairAddress = ' + pairAddress);
+
+      const pairUniswap = await IUniswapV2Pair.at(pairAddress);
+
+      const reservesBefore = await pairUniswap.getReserves();
+      assertBNequal(reservesBefore[0], 0);
+      assertBNequal(reservesBefore[1], 0);
+
+      await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
+      await uniswapRouter.addLiquidityETH(
+        sunnyBunnyToken.address,
+        liquidityTokensAmount,
+        0,
+        0,
+        OWNER,
+        new Date().getTime() + 3000,
+        {value: liquidityEtherAmount}
+      );
+
+      const reservesAfter = await pairUniswap.getReserves();
+
+      if (await pairUniswap.token0() == sunnyBunnyToken.address) {
+        assertBNequal(reservesAfter[0], liquidityTokensAmount);
+        assertBNequal(reservesAfter[1], liquidityEtherAmount);
+      } else {
+        assertBNequal(reservesAfter[0], liquidityEtherAmount);
+        assertBNequal(reservesAfter[1], liquidityTokensAmount);
+      }
+    });
+
+    /**it('add liquidity', async () => {
       const tokensToLiquid = TOKEN_AMOUNT / 2;
 
       let tx = await uniswapRouter.addLiquidityETH(
@@ -150,7 +210,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         for (const log of tx.logs) {
           console.log(`${log.args.message} ${log.args.val}`);
         }
-  });
+  });*/
 
   //todo if no need more, have to delete the file ./helpers/deployUniswap.js
   //const deployUniswap = require('./helpers/deployUniswap');
@@ -188,23 +248,24 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     const UniswapFactory = new web3.eth.Contract(UniswapV2Factory.abi, UNISWAP_V2_FACTORY);
     */
 
-    //await SuBToken.createUniswapPair();
-    //const sunnyBunnyTokenInstance = await sunnyBunnyToken.deployed();
-    //const SuBToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
-    // SuBToken.deployed();
-    //SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(SuBToken.address);
-    //SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(SuBToken.address);
-    //await SunnyBunnyUniswapLiquidity.deployed();
-    //const sunnyBunnyToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
-    //await sunnyBunnyToken.deployed();
-    //const sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(sunnyBunnyToken.address);
-    //await sunnyBunnyUniswapLiquidity.deployed();
+    /*await SuBToken.createUniswapPair();
+      const sunnyBunnyTokenInstance = await sunnyBunnyToken.deployed();
+      const SuBToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
+      SuBToken.deployed();
+      SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(SuBToken.address);
+      SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(SuBToken.address);
+      await SunnyBunnyUniswapLiquidity.deployed();
+      const sunnyBunnyToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
+      await sunnyBunnyToken.deployed();
+      const sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(sunnyBunnyToken.address);
+      await sunnyBunnyUniswapLiquidity.deployed();
+    */
 
     //Use tokens from NOT_OWNER
-    //await sunnyBunnyToken.transfer(NOT_OWNER, TOKEN_AMOUNT, { from: OWNER });
-    //await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: NOT_OWNER });
-    //await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: OWNER });
-    //Use liquidity from SunnyBunnyUniswapLiquidity.sol
+    /*await sunnyBunnyToken.transfer(NOT_OWNER, TOKEN_AMOUNT, { from: OWNER });
+      await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: NOT_OWNER });
+      await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: OWNER });
+    */
 
     /**it('add liquidity', async () => {
         const tokensToLiquid = TOKEN_AMOUNT / 2;
