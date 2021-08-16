@@ -2,6 +2,7 @@ const Ganache = require('./helpers/ganache');
 const deployUniswap = require('./helpers/deployUniswap');
 const { send, expectEvent, expectRevert, constants } = require('@openzeppelin/test-helpers');
 const IUniswapV2Pair = artifacts.require('@uniswap/v2-core/IUniswapV2Pair');
+const IERC20 = artifacts.require('@openzeppelin/contracts/token/IERC20');
 
 const SunnyBunny = artifacts.require('SunnyBunny');
 const SunnyBunnyUniswapLiquidity = artifacts.require('SunnyBunnyUniswapLiquidity');
@@ -29,6 +30,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
   let uniswapFactory;
   let uniswapRouter;
+  let contractIERC20;
   let weth;
   let pairUniswap;
   let pairAddress;
@@ -79,7 +81,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
   describe('General tests', async () => {
 
-    //Use liquidity from original Uniswap
+    //Use add liquidity from original Uniswap
     it('should be possible to add liquidity on pair', async () => {
       const liquidityTokensAmount = bn('10').mul(BASE_UNIT); // 10 tokens
       const liquidityEtherAmount = bn('1').mul(BASE_UNIT); // 1 ETH
@@ -91,12 +93,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
 
       await uniswapRouter.addLiquidityETH(
-        sunnyBunnyToken.address,
-        liquidityTokensAmount,
-        0,
-        0,
-        OWNER,
-        new Date().getTime() + 3000,
+        sunnyBunnyToken.address, liquidityTokensAmount, 0, 0, OWNER, new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
       );
 
@@ -110,3 +107,33 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         assertBNequal(reservesAfter[1], liquidityTokensAmount);
       }
     });
+
+    //Use remove liquidity from original Uniswap
+    it('should be possible to remove liquidity on pair', async () => {
+
+      const reservesAfter = await pairUniswap.getReserves();
+      /*
+        console.log('reservesAfter = ' + reservesAfter);
+        for(let index in reservesAfter) {
+          console.log('index = ' + index);
+          console.log('reservesAfter = ' + reservesAfter[index]);
+        }
+      */
+
+      const liquidityAmount = reservesAfter[2];
+      console.log('liquidity Amount = ' + liquidityAmount);
+
+      pairUniswap.approve(uniswapRouter.address, 1000)
+
+      await uniswapRouter.removeLiquidityETH(
+        sunnyBunnyToken.address, 1000, 0, 0, EXTRA_ADDRESS, new Date().getTime() + 3000
+      );
+
+      const balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
+      console.log('balance = ' + balance);
+
+    });
+
+  })
+
+})
