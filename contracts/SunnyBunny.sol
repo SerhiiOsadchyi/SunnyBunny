@@ -24,17 +24,18 @@ contract SunnyBunny is ERC20, Ownable {
     address internal _feeReceiver
     ;
 
-    constructor(address feeReciever, uint8 feePercent) ERC20(_name, _symbol) {
-        require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
-        require(15 >= feePercent, "A fee might to be set to 15% or less");
-        _totalSupply = 7e5 * 1e18;
-        _balances[_msgSender()] = _totalSupply;
-        _feeReceiver = feeReciever;
-        _feePercent = feePercent;
-    }
-
-    IUniswapV2Factory public uniswapFactory;
-    IUniswapV2Router02 public uniswapRouter;
+    constructor(
+            address feeReciever, uint8 feePercent, address _router, address _factory
+        ) ERC20(_name, _symbol) {
+            require(feeReciever != address(0), "Tokens couldn't be transfer to a zero address");
+            require(15 >= feePercent, "A fee might to be set to 15% or less");
+            _totalSupply = 7e5 * 1e18;
+            _balances[_msgSender()] = _totalSupply;
+            _feeReceiver = feeReciever;
+            _feePercent = feePercent;
+            uniswapRouter = IUniswapV2Router02(_router);
+            uniswapFactory = IUniswapV2Factory(_factory);
+        }
 
     function setReceiver(address feeReceiver) public onlyOwner {
         require(feeReceiver != address(0), "Receiver\'s address couldn\'t be set to zero");
@@ -94,6 +95,13 @@ contract SunnyBunny is ERC20, Ownable {
     }
 
     address public tokenUniswapPair;
+
+    IUniswapV2Factory public uniswapFactory;
+    IUniswapV2Router02 public uniswapRouter;
+
+    function getUniswapRouterWETH() public view returns (address) {
+        return uniswapRouter.WETH();
+    }
 
     function createUniswapPair() public returns (address) {
         require(tokenUniswapPair == address(0), "Token: pool already created");

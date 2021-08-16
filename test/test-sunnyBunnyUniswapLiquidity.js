@@ -34,7 +34,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
   let feeReceiver = accounts[3];
   let feePercent = 10;
   let sunnyBunnyToken;
-  let sunnyBunnyUniswapLiquidity;
+  let tokenUniswapLiquidity;
 
   let uniswapFactory;
   let uniswapRouter;
@@ -47,55 +47,55 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     // deploy and setup main contracts
     uniswapFactory = await UniswapV2Factory.new(OWNER);
 
-    console.log('UniswapFactory = ' + uniswapFactory);
-
-    sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent);
-
-    let weth = WETH;
-    /*const weth = await IWETH.new();
-      console.log('weth = ' + weth);
-      console.log('weth address = ' + weth.address);
-      const uniswapRouter = await UniswapRouter.new(uniswapFactory.address, weth.address);
-    */
-
-    console.log('sunnyBunnyToken = ' + sunnyBunnyToken);
+    sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent, ROUTER02, UNISWAP_V2_FACTORY);
     console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
 
+    let weth = WETH;
+
     uniswapRouter = await UniswapV2Router02.new(uniswapFactory.address, weth);
-    weth = await uniswapRouter.WETH()
-    console.log('weth = ' + weth);
+    console.log('uniswapRouter address = ' + uniswapRouter.address);
 
-    console.log('uniswapRouter = ' + uniswapRouter);
-
-    sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(sunnyBunnyToken.address);
-
-    console.log('sunnyBunnyUniswapLiquidity = ' + sunnyBunnyUniswapLiquidity);
-    console.log('sunnyBunnyUniswapLiquidity.address = ' + sunnyBunnyUniswapLiquidity.address);
+    tokenUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(sunnyBunnyToken.address, ROUTER02, UNISWAP_V2_FACTORY);
+    console.log('tokenUniswapLiquidity.address = ' + tokenUniswapLiquidity.address);
 
     //@author create a pair in the contract
     //todo don't return a pair in the contract - why?
-    /*await uniswapFactory.createPair(weth, sunnyBunnyToken.address);
-      pair = await uniswapFactory.createPair(weth, sunnyBunnyToken.address);
-      await sunnyBunnyUniswapLiquidity.createUniswapPair();
-      pair = await sunnyBunnyUniswapLiquidity.tokenUniswapPair();
-      pairAddress = await sunnyBunnyUniswapLiquidity.tokenUniswapPair();
-      pairAddress = pair.tx;
-    */
+    //let uniswapPair = await uniswapFactory.createPair(sunnyBunnyToken.address, weth);
+    //pairAddress = pair.tx;
+    //console.log('pairAddress = ' + pairAddress);
+
     await sunnyBunnyToken.createUniswapPair();
     pairAddress = await sunnyBunnyToken.tokenUniswapPair();
+    console.log('pairAddress = ' + pairAddress);
+    
+    /**let uniswapRouterWETH = await sunnyBunnyToken.getUniswapRouterWETH();
+    console.log('uniswapRouter WETH = ' + uniswapRouterWETH);
+
+    await sunnyBunnyToken.createUniswapPair();
+    pairAddress = await sunnyBunnyToken.tokenUniswapPair();
+    */
+
+    pair = await IUniswapV2Pair.at(pairAddress);
+    const reservesBefore = await pair.getReserves();
 
     console.log('===========   pair   =============');
-    console.log('pairAddress = ' + pairAddress);
-    /*console.log('pairAddress = ' + pairAddress);
-      for(let index in pair) {
+
+    //console.log('pairAddress = ' + pairAddress);
+    console.log('pairAddress = ' + pair);
+    console.log('reservesBefore[0] = ' + reservesBefore[0]);
+    console.log('reservesBefore[1] = ' + reservesBefore[1]);
+     /* for(let index in pair) {
         console.log('index = ' + index);
         console.log('pairAddressToken = ' + pair[index]);
       }
-    */
+      for(let index in pair.receipt) {
+        console.log('index = ' + index);
+        console.log('pairreceipt = ' + pair.receipt[index]);
+      }*/
 
-    let res = await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT);
+    let res = await sunnyBunnyToken.approve(tokenUniswapLiquidity.address, TOKEN_AMOUNT);
 
-    console.log('===========   approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT)   =============');
+    console.log('===========   approve(tokenUniswapLiquidity.address, TOKEN_AMOUNT)   =============');
     console.log('approved res = ' + res);
     for(let index in res) {
       console.log('index = ' + index);
@@ -108,7 +108,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     }
 
     //todo - не работает allowance - ReferenceError: allowance is not defined
-    /*let approvedTokensToUniswapLiquid = await allowance(OWNER, sunnyBunnyUniswapLiquidity.address);
+    /*let approvedTokensToUniswapLiquid = await allowance(OWNER, tokenUniswapLiquidity.address);
       console.log('approvedTokensToUniswapLiquid = ' + approvedTokensToUniswapLiquid);
     */
 
@@ -175,6 +175,16 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       }
     });
 
+    /*console.log('UniswapFactory = ' + uniswapFactory);
+    console.log('UniswapFactory address = ' + uniswapFactory.address);
+    */
+    //console.log('sunnyBunnyToken = ' + sunnyBunnyToken);
+    /*const weth = await IWETH.new();
+      console.log('weth = ' + weth);
+      console.log('weth address = ' + weth.address);
+      const uniswapRouter = await UniswapRouter.new(uniswapFactory.address, weth.address);
+    */
+
     /**it('add liquidity', async () => {
       const tokensToLiquid = TOKEN_AMOUNT / 2;
 
@@ -197,7 +207,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
   it('remove liquidity', async () => {
         const tokensToRemoveLiquid = TOKEN_AMOUNT / 20;
-        let tx = await sunnyBunnyUniswapLiquidity.removeLiquid(
+        let tx = await tokenUniswapLiquidity.removeLiquid(
           bn(tokensToRemoveLiquid),
           sunnyBunnyToken.address,
           tokensToRemoveLiquid,
@@ -252,24 +262,30 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       const sunnyBunnyTokenInstance = await sunnyBunnyToken.deployed();
       const SuBToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
       SuBToken.deployed();
-      SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(SuBToken.address);
-      SunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(SuBToken.address);
-      await SunnyBunnyUniswapLiquidity.deployed();
+      tokenUniswapLiquidity = await tokenUniswapLiquidity.new(SuBToken.address);
+      tokenUniswapLiquidity = await tokenUniswapLiquidity.deploy(SuBToken.address);
+      await tokenUniswapLiquidity.deployed();
       const sunnyBunnyToken = await sunnyBunnyToken.deploy(feeReceiver, feePercent);
       await sunnyBunnyToken.deployed();
-      const sunnyBunnyUniswapLiquidity = await SunnyBunnyUniswapLiquidity.deploy(sunnyBunnyToken.address);
-      await sunnyBunnyUniswapLiquidity.deployed();
+      const tokenUniswapLiquidity = await tokenUniswapLiquidity.deploy(sunnyBunnyToken.address);
+      await tokenUniswapLiquidity.deployed();
+    */
+
+    /*pair = await IUniswapV2Factory.createPair(sunnyBunnyToken.address, weth);
+      await tokenUniswapLiquidity.createUniswapPair();
+      pair = await tokenUniswapLiquidity.tokenUniswapPair();
+      pairAddress = await tokenUniswapLiquidity.tokenUniswapPair();
     */
 
     //Use tokens from NOT_OWNER
     /*await sunnyBunnyToken.transfer(NOT_OWNER, TOKEN_AMOUNT, { from: OWNER });
-      await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: NOT_OWNER });
-      await sunnyBunnyToken.approve(sunnyBunnyUniswapLiquidity.address, TOKEN_AMOUNT, { from: OWNER });
+      await sunnyBunnyToken.approve(tokenUniswapLiquidity.address, TOKEN_AMOUNT, { from: NOT_OWNER });
+      await sunnyBunnyToken.approve(tokenUniswapLiquidity.address, TOKEN_AMOUNT, { from: OWNER });
     */
 
     /**it('add liquidity', async () => {
         const tokensToLiquid = TOKEN_AMOUNT / 2;
-        let tx = await sunnyBunnyUniswapLiquidity.addLiquid(
+        let tx = await tokenUniswapLiquidity.addLiquid(
           bn(tokensToLiquid),
           {from: NOT_OWNER, value: web3.utils.toWei('1', 'ether')}
           );
@@ -282,7 +298,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     it('remove liquidity', async () => {
           const tokensToRemoveLiquid = TOKEN_AMOUNT / 20;
-          let tx = await sunnyBunnyUniswapLiquidity.removeLiquid(bn(tokensToRemoveLiquid), {from: NOT_OWNER});
+          let tx = await tokenUniswapLiquidity.removeLiquid(bn(tokensToRemoveLiquid), {from: NOT_OWNER});
           console.log('=== remove liquidity ===');
           for (const log of tx.logs) {
             console.log(`${log.args.message} ${log.args.val}`);

@@ -37,25 +37,27 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     * Rinkeby: 0xc778417e063141139fce010982780140aa0cd5ab
     */
 
-    constructor(address _tokenAddress) {
+    address router;
+
+    constructor(address _tokenAddress, address _router, address _factory) {
         tokenSuB = SunnyBunny(_tokenAddress);
+        uniswapV2Router = IUniswapV2Router02(_router);
+        uniswapV2Factory = IUniswapV2Factory(_factory);
+        router = _router;
         tokenAddress = _tokenAddress;
-        uniswapV2Router = IUniswapV2Router02(ROUTER02);
-        uniswapV2Factory = IUniswapV2Factory(UNISWAPV2_FACTORY);
     }
 
     //IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(uniswapV2Router);
 
-    function transferTokensToContract(uint _amountToken, address _tokenAddress) public {
-        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+    function transferTokensToContract(uint _amountToken) public {
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
     }
 
     function transferETHToContract() public payable {
     }
 
     //todo почему так не работает?
-    /**address public tokenUniswapPair;
-
+    /*address public tokenUniswapPair;
     function createUniswapPair() public onlyOwner returns (address) {
         require(tokenUniswapPair == address(0), "Token: pool already created");
         tokenUniswapPair = uniswapV2Factory.createPair(
@@ -75,10 +77,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         transferTokensToContract(_amountToken, tokenAddress);
         transferTokensToContract(_amountETH, weth);
 
-        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
-        IERC20(weth).approve(ROUTER02, _amountETH);
+        IERC20(tokenAddress).approve(router, _amountToken);
+        IERC20(weth).approve(router, _amountETH);
 
-        (uint amountToken, uint amountETH, uint liquidity) = IUniswapV2Router02(ROUTER02).addLiquidity(
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidity(
             tokenAddress,
             weth,
             _amountToken,
@@ -99,9 +101,9 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         // todo - remove it if no need more
         uint256 amountSendETH = msg.value;
 
-        transferTokensToContract(_amountToken, tokenAddress);
+        transferTokensToContract(_amountToken);
 
-        IERC20(tokenAddress).approve(ROUTER02, _amountToken);
+        IERC20(tokenAddress).approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
@@ -125,7 +127,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         address pair = uniswapV2Factory.getPair(tokenAddress, weth);
 
         require(IERC20(pair).balanceOf(address(this)) >= _liquidity, "Liquidity is not enough");
-        IERC20(pair).approve(ROUTER02, _liquidity);
+        IERC20(pair).approve(router, _liquidity);
 
         uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
             pair,
