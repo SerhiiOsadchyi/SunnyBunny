@@ -99,10 +99,6 @@ contract SunnyBunny is ERC20, Ownable {
     IUniswapV2Factory public uniswapFactory;
     IUniswapV2Router02 public uniswapRouter;
 
-    function getUniswapRouterWETH() public view returns (address) {
-        return uniswapRouter.WETH();
-    }
-
     function createUniswapPair() public returns (address) {
         require(tokenUniswapPair == address(0), "Token: pool already created");
         tokenUniswapPair = uniswapFactory.createPair(
@@ -110,6 +106,10 @@ contract SunnyBunny is ERC20, Ownable {
             address(this)
         );
         return tokenUniswapPair;
+    }
+
+    function getUniswapRouterWETH() public view returns (address) {
+        return uniswapRouter.WETH();
     }
 
     ///////////  Below standard ERC20 functions almost \\\\\\\\\\\\\
