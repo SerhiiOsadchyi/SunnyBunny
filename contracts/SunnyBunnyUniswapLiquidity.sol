@@ -198,9 +198,9 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     /** todo remove if no need */
-        receive() external payable {
-            emit Received(msg.sender, msg.value);
-        }
+    receive() external payable {
+        emit Received(msg.sender, msg.value);
+    }
 
     /** ============  SERVICE FUNCTIONS ============= */
 

@@ -30,10 +30,11 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
   let uniswapFactory;
   let uniswapRouter;
-  let contractIERC20;
+  //let contractIERC20;
   let weth;
   let pairUniswap;
   let pairAddress;
+  let balance;
 
   before('setup others', async function() {
     const contracts = await deployUniswap(accounts);
@@ -43,39 +44,40 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     // deploy and setup main contracts
     sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent, uniswapRouter.address, uniswapFactory.address);
-    console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
-    console.log('uniswapRouter address = ' + uniswapRouter.address);
-    console.log('uniswapFactory address = ' + uniswapFactory.address);
-
     tokenUniswapLiquidity = await SunnyBunnyUniswapLiquidity.new(
       sunnyBunnyToken.address, uniswapRouter.address, uniswapFactory.address
       );
-    console.log('tokenUniswapLiquidity.address = ' + tokenUniswapLiquidity.address);
 
     //todo почему не возвращает адрес пары?
     //pairAddress = await sunnyBunnyToken.createUniswapPair();
 
     await sunnyBunnyToken.createUniswapPair();
     pairAddress = await sunnyBunnyToken.tokenUniswapPair();
-    console.log('pairAddress = ' + pairAddress);
-
     pairUniswap = await IUniswapV2Pair.at(pairAddress);
-    const reservesBefore = await pairUniswap.getReserves();
 
-    console.log('pairAddress = ' + pairUniswap);
+    let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
+    console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);
 
-    await sunnyBunnyToken.approve(tokenUniswapLiquidity.address, TOKEN_AMOUNT);
-    await sunnyBunnyToken.approve(uniswapFactory.address, TOKEN_AMOUNT);
+    balance = await sunnyBunnyToken.balanceOf(OWNER);
+    console.log('balance sunnyBunnyToken OWNER = ' + balance);
 
-    //todo - не работает allowance - ReferenceError: allowance is not defined
-    /*let approvedTokensToRouter = await allowance(OWNER, ROUTER02);
-      console.log('approvedTokensToRouter = ' + approvedTokensToRouter);
-    */
+    /*async function sendETH(contractName) {
+      await contractName.send(BASE_UNIT);
+      const balanceETH = await web3.eth.getBalance(contractName.address);
+      console.log(`balance ETH ${contractName} contract = ${balanceETH}`);
+    }
 
-    let balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-    let balanceETH = await web3.eth.getBalance(NOT_OWNER);
-    console.log('balance = ' + balance);
-    console.log('balanceETH = ' + balanceETH);
+    await sendETH(tokenUniswapLiquidity);
+    await sendETH(uniswapRouter);*/
+
+    // todo remove it
+    await tokenUniswapLiquidity.send(BASE_UNIT);
+    let balanceETH = await web3.eth.getBalance(tokenUniswapLiquidity.address);
+    console.log('balance ETH tokenUniswapLiquidity contract = ' + balanceETH);
+
+    /*await uniswapRouter.send(BASE_UNIT);
+    balanceETH = await web3.eth.getBalance(uniswapRouter.address);
+    console.log('balance ETH uniswapRouter = ' + balanceETH);*/
 
   });
 
@@ -83,8 +85,13 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     //Use add liquidity from original Uniswap
     it('should be possible to add liquidity on pair', async () => {
-      const liquidityTokensAmount = bn('10').mul(BASE_UNIT); // 10 tokens
-      const liquidityEtherAmount = bn('1').mul(BASE_UNIT); // 1 ETH
+
+      console.log('==================     add liquidity     ================');
+
+      //const liquidityTokensAmount = bn('10').mul(BASE_UNIT); // 10 tokens
+      //const liquidityEtherAmount = bn('1').mul(BASE_UNIT); // 1 ETH
+      const liquidityTokensAmount = 20000; // 20000 tokens
+      const liquidityEtherAmount = 10000; // 10000 wei
 
       const reservesBefore = await pairUniswap.getReserves();
       assertBNequal(reservesBefore[0], 0);
@@ -93,7 +100,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
 
       await uniswapRouter.addLiquidityETH(
-        sunnyBunnyToken.address, liquidityTokensAmount, 0, 0, OWNER, new Date().getTime() + 3000,
+        sunnyBunnyToken.address, liquidityTokensAmount, 0, 0, OWNER,
+        new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
       );
 
@@ -106,31 +114,62 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         assertBNequal(reservesAfter[0], liquidityEtherAmount);
         assertBNequal(reservesAfter[1], liquidityTokensAmount);
       }
+
     });
 
     //Use remove liquidity from original Uniswap
     it('should be possible to remove liquidity on pair', async () => {
 
-      const reservesAfter = await pairUniswap.getReserves();
-      /*
-        console.log('reservesAfter = ' + reservesAfter);
-        for(let index in reservesAfter) {
-          console.log('index = ' + index);
-          console.log('reservesAfter = ' + reservesAfter[index]);
-        }
+      console.log('==================     remove liquidity     ================');
+
+      let liquidityAmount = await pairUniswap.balanceOf(OWNER);
+      console.log('balance OWNER liquidityAmount before remove liquidity = ' + liquidityAmount);
+      /*let halfLiquidityAmount = bn(liquidityAmount).div(bn('2'));
+        let subLiquidityAmount = bn(liquidityAmount).sub(bn('2000000000'));
       */
 
-      const liquidityAmount = reservesAfter[2];
-      console.log('liquidity Amount = ' + liquidityAmount);
+      /*balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
+        console.log('balance EXTRA_ADDRESS sunnyBunnyToken before remove liquidity = ' + balance);
+      */
 
-      pairUniswap.approve(uniswapRouter.address, 1000)
+      await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
+      balance = await pairUniswap.balanceOf(uniswapRouter.address);
+      console.log('balance pairUniswap at uniswapRouter = ' + balance);
 
-      await uniswapRouter.removeLiquidityETH(
-        sunnyBunnyToken.address, 1000, 0, 0, EXTRA_ADDRESS, new Date().getTime() + 3000
+      let approvedPairUniswapToRouter = await pairUniswap.allowance(OWNER, uniswapRouter.address);
+      console.log('approved PairUniswap To Router = ' + approvedPairUniswapToRouter);
+
+      // todo - почему так не работает - нет "weth.address"?
+      //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
+      //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
+      /*await uniswapRouter.removeLiquidityETH(
+        sunnyBunnyToken.address, '1000', 0, 0, OWNER,
+        new Date().getTime() + 3000
+      );*/
+
+      await uniswapRouter.removeLiquidity(
+        sunnyBunnyToken.address, weth.address, 1000, 0, 0, OWNER,
+        new Date().getTime() + 3000
       );
+      /*Не работает как надо:
+        Было 13142
+        Сжег 1000
+        Осталось -9293
+      */
 
-      const balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
-      console.log('balance = ' + balance);
+      /*balance = await sunnyBunnyToken.balanceOf(OWNER);
+        console.log('balance OWNER sunnyBunnyToken after remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
+        console.log('balance EXTRA_ADDRESS sunnyBunnyToken after remove liquidity = ' + balance);
+      */
+
+      const reservesAfter = await pairUniswap.getReserves();
+
+      liquidityAmount = await pairUniswap.balanceOf(OWNER);
+      console.log('liquidity Amount at OWNER  after remove liquidity = ' + liquidityAmount);
+
+      assertBNequal(reservesAfter[0], 0);
+      assertBNequal(reservesAfter[1], 0);
 
     });
 
