@@ -124,13 +124,6 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       let liquidityAmount = await pairUniswap.balanceOf(OWNER);
       console.log('balance OWNER liquidityAmount before remove liquidity = ' + liquidityAmount);
-      /*let halfLiquidityAmount = bn(liquidityAmount).div(bn('2'));
-        let subLiquidityAmount = bn(liquidityAmount).sub(bn('2000000000'));
-      */
-
-      /*balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
-        console.log('balance EXTRA_ADDRESS sunnyBunnyToken before remove liquidity = ' + balance);
-      */
 
       await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
       balance = await pairUniswap.balanceOf(uniswapRouter.address);
@@ -143,25 +136,20 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
       //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
       /*await uniswapRouter.removeLiquidityETH(
-        sunnyBunnyToken.address, '1000', 0, 0, OWNER,
+        sunnyBunnyToken.address, liquidityAmount - 1200, 0, 0, OWNER,
         new Date().getTime() + 3000
       );*/
 
+      //todo - непонятно как работает, см. ниже
+      /*
+        Если вместо "liquidityAmount - 1200" задать "liquidityAmount" - ошибка
+        Error: Returned error: VM Exception while processing transaction: revert UniswapV2:
+        TRANSFER_FAILED -- Reason given: UniswapV2: TRANSFER_FAILED.
+      */
       await uniswapRouter.removeLiquidity(
-        sunnyBunnyToken.address, weth.address, 12000, 0, 0, OWNER,
+        sunnyBunnyToken.address, weth.address, liquidityAmount - 1200, 0, 0, OWNER,
         new Date().getTime() + 3000
       );
-      /*Не работает как надо:
-        Было 13142
-        Сжег 1000
-        Осталось -9293
-      */
-
-      /*balance = await sunnyBunnyToken.balanceOf(OWNER);
-        console.log('balance OWNER sunnyBunnyToken after remove liquidity = ' + balance);
-        balance = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
-        console.log('balance EXTRA_ADDRESS sunnyBunnyToken after remove liquidity = ' + balance);
-      */
 
       const reservesAfter = await pairUniswap.getReserves();
 
@@ -174,6 +162,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         assertBNequal(reservesAfter[1], 0);
       */
 
+      assert.equal(liquidityAmount, 1200);
       //assert.equal(reservesAfter[0], 0);
       //assert.equal(reservesAfter[1], 0);
 
