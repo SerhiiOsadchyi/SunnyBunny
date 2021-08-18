@@ -56,7 +56,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function transferETHToContract() public payable {
     }
 
-    //todo почему так не работает?
+    //TODO почему так не работает?
     /*address public tokenUniswapPair;
     function createUniswapPair() public onlyOwner returns (address) {
         require(tokenUniswapPair == address(0), "Token: pool already created");
@@ -69,7 +69,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     /** Convert ETH to WETH
     function addLiquid(uint _amountToken, uint _amountETH) public payable {
-        // todo - remove it if no need more
+        // TODO - remove it if no need more
         require(msg.value >= _amountETH, "ETH is not enough");
         //uint256 amountSendETH = msg.value;
         address weth = uniswapV2Router.WETH();
@@ -98,7 +98,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     // Use ETH 
     function addLiquid(uint _amountToken) public payable {
-        // todo - remove it if no need more
+        // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
 
         transferTokensToContract(_amountToken);
@@ -121,7 +121,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     function removeLiquid(uint _liquidity) external {
-        // todo Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        // TODO Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         // get address of Token pair Uniswap V2 LP
         address weth = uniswapV2Router.WETH();
         address pair = uniswapV2Factory.getPair(tokenAddress, weth);
@@ -145,11 +145,11 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
 
-    //todo make sure:  **** Swap for SuB/ETH pair ****
+    //TODO make sure:  **** Swap for SuB/ETH pair ****
 
-    //todo make sure: sell tokens at a maximum price
+    //TODO make sure: sell tokens at a maximum price
     function swapExactETHForTokens(uint _amountOutMin) public payable {
-        // todo Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
@@ -162,9 +162,9 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     }
 
-    //todo make sure:   Swap for ETH/SuB pair
+    //TODO make sure:   Swap for ETH/SuB pair
 
-    //todo make sure: sell tokens at maximum price
+    //TODO make sure: sell tokens at maximum price
     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
@@ -177,7 +177,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         );
     }
 
-    //todo remove if no need
+    //TODO remove if no need
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
@@ -207,7 +207,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     /** @author: I think all in comments no need */
 
-    //todo make sure: buy tokens at a minimum price
+    //TODO make sure: buy tokens at a minimum price
     /* function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public {
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
@@ -217,7 +217,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapV2Router.swapTokensForExactETH(_amountOut, _amountInMax, path, address(this), block.timestamp);
     } */
 
-    //todo make sure: buy tokens at market price
+    //TODO make sure: buy tokens at market price
     /* function swapETHForExactTokens(uint _amountOut) public payable {
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);

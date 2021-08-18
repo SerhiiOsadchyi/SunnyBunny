@@ -6,7 +6,7 @@ const SunnyBunny = artifacts.require('SunnyBunny');
 contract('Sunny Bunny token', function(accounts) {
   const ganache = new Ganache(web3);
 
-  // todo - delete if not use anymore
+  // TODO - delete if not use anymore
   // afterEach('revert', ganache.revert);
 
   const bn = (input) => web3.utils.toBN(input);
