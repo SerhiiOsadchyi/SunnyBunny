@@ -141,7 +141,17 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
           { value: amountETH }
         );
         */
-    
+
+       /**  await uniswapRouter.swapExactETHForTokens(
+          0,
+          [weth.address, sunnyBunnyToken.address],
+          //liquidityInstance.address,
+          OWNER,
+          new Date().getTime() + 3000,
+          { value: amountETH }
+        );
+        console.log('swapExactETHForTokens OK');
+        */
 
       /**@author try to convert ETH to WETH and use these like two ERC20 tokens */
 
@@ -159,7 +169,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       await uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
         halfBalanceWeth,
         0,
-        [weth.address, sunnyBunnyToken.address],
+        [weth.address, sunnyBunnyToken.address], // revert UniswapV2: K -- Reason given: UniswapV2: K.
+        //[sunnyBunnyToken.address, weth.address], // revert TransferHelper: TRANSFER_FROM_FAILED
         //liquidityInstance.address,
         OWNER,
         new Date().getTime() + 3000
