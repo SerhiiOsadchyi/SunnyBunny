@@ -131,17 +131,18 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       /**@author try to use swapExactETHForTokens from contract */
       //await liquidityInstance.swapExactETHForTokens(0, { value: bn(amountETH) });
 
-      /**@author try to use original swapExactETHForTokens for token without fee */
-      /*await uniswapRouter.swapExactETHForTokensSupportingFeeOnTransferTokens(
+      /**@author try to use original swapExactETHForTokens for token with fee */
+      await uniswapRouter.swapExactETHForTokensSupportingFeeOnTransferTokens(
           0,
-          [weth.address, sunnyBunnyToken.address],
+          [weth.address, sunnyBunnyToken.address],  // revert UniswapV2: K -- Reason given: UniswapV2: K
+         // [sunnyBunnyToken.address, weth.address],  //  revert UniswapV2Router: INVALID_PATH -- Reason given: UniswapV2Router: INVALID_PATH.
           //liquidityInstance.address,
           OWNER,
           new Date().getTime() + 3000,
           { value: amountETH }
-        );
-        */
+      );
 
+        /**@author try to use original swapExactETHForTokens for token without fee */
        /**  await uniswapRouter.swapExactETHForTokens(
           0,
           [weth.address, sunnyBunnyToken.address],
@@ -154,28 +155,27 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         */
 
       /**@author try to convert ETH to WETH and use these like two ERC20 tokens */
+        /*await weth.deposit({value: amountETH});
+        let balanceWeth = await weth.balanceOf(OWNER);
+        console.log('balance WETH of OWNER = ' + balanceWeth);
 
-      await weth.deposit({value: amountETH});
-      let balanceWeth = await weth.balanceOf(OWNER);
-      console.log('balance WETH of OWNER = ' + balanceWeth);
+        let halfBalanceWeth = bn(balanceWeth).div(bn('2'));
+        console.log('half balance WETH of OWNER = ' + halfBalanceWeth);
 
-      let halfBalanceWeth = bn(balanceWeth).div(bn('2'));
-      console.log('half balance WETH of OWNER = ' + halfBalanceWeth);
+        await weth.approve(uniswapRouter.address, halfBalanceWeth);
+        let approvedWethToRouter = await weth.allowance(OWNER, uniswapRouter.address);
+        console.log('approved weth To Router = ' + approvedWethToRouter);
 
-      await weth.approve(uniswapRouter.address, halfBalanceWeth);
-      let approvedWethToRouter = await weth.allowance(OWNER, uniswapRouter.address);
-      console.log('approved weth To Router = ' + approvedWethToRouter);
-
-      await uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-        halfBalanceWeth,
-        0,
-        [weth.address, sunnyBunnyToken.address], // revert UniswapV2: K -- Reason given: UniswapV2: K.
-        //[sunnyBunnyToken.address, weth.address], // revert TransferHelper: TRANSFER_FROM_FAILED
-        //liquidityInstance.address,
-        OWNER,
-        new Date().getTime() + 3000
-      );
-
+        await uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+          halfBalanceWeth,
+          0,
+          [weth.address, sunnyBunnyToken.address], // revert UniswapV2: K -- Reason given: UniswapV2: K.
+          //[sunnyBunnyToken.address, weth.address], // revert TransferHelper: TRANSFER_FROM_FAILED
+          //liquidityInstance.address,
+          OWNER,
+          new Date().getTime() + 3000
+        );
+      */
       console.log('End of swap ETH for SunnyBunny token');
     });
 
