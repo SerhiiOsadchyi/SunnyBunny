@@ -60,7 +60,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     balance = await sunnyBunnyToken.balanceOf(OWNER);
     console.log('balance sunnyBunnyToken OWNER = ' + balance);
 
-    // TODO: remove it if no need
+    // TODO: send 1 ether to contract "SunnyBunnyUniswapLiquidity" - remove it if no need
     /*await liquidityInstance.send(BASE_UNIT);
       let balanceETH = await web3.eth.getBalance(liquidityInstance.address);
       console.log('balance ETH liquidityInstance contract = ' + balanceETH);
@@ -92,7 +92,11 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
 
       await uniswapRouter.addLiquidityETH(
-        sunnyBunnyToken.address, liquidityTokensAmount, 0, 0, OWNER,
+        sunnyBunnyToken.address,
+        liquidityTokensAmount,
+        0,
+        0,
+        OWNER,
         new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
       );
@@ -111,41 +115,63 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     it('should be possible to swap ETH for SunnyBunny tokens', async () => {
       console.log('==================   swap ETH for SunnyBunny token   ================');
-      //const amount = bn('5').mul(BASE_UNIT); // 5 tokens
-      const amountETH = bn('1e16'); // 0,01 ether
+      const amountETH = bn('2').mul(BASE_UNIT).div(bn('100')); // 0.02 ether
+      console.log('amount ETH = ' + amountETH);
 
-      /*await sunnyBunnyToken.approve(uniswapRouter.address, amount);
-      let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
-      console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);*/
+      const reserves = await pairUniswap.getReserves();
+      console.log('reserves[0] = ' + reserves[0]);
+      console.log('reserves[1] = ' + reserves[1]);
 
       /**
-       * TODO: Errors str. 127-138
+       * TODO: Errors next 15 strings
         ** Error: Returned error: VM Exception while processing transaction:
         ** revert UniswapV2: K -- Reason given: UniswapV2: K.
       */
 
       /**@author try to use swapExactETHForTokens from contract */
-      // await liquidityInstance.swapExactETHForTokens(0, { value: bn(amountETH) });
+      //await liquidityInstance.swapExactETHForTokens(0, { value: bn(amountETH) });
 
       /**@author try to use original swapExactETHForTokens for token without fee */
-      /** await uniswapRouter.swapExactETHForTokensSupportingFeeOnTransferTokens(
+      /*await uniswapRouter.swapExactETHForTokensSupportingFeeOnTransferTokens(
           0,
           [weth.address, sunnyBunnyToken.address],
           //liquidityInstance.address,
           OWNER,
           new Date().getTime() + 3000,
-          { value: bn(amountETH) }
+          { value: amountETH }
         );
-      */
+        */
+    
 
-      balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-      console.log('balance sunnyBunnyToken NOT_OWNER = ' + balance);
+      /**@author try to convert ETH to WETH and use these like two ERC20 tokens */
+
+      await weth.deposit({value: amountETH});
+      let balanceWeth = await weth.balanceOf(OWNER);
+      console.log('balance WETH of OWNER = ' + balanceWeth);
+
+      let halfBalanceWeth = bn(balanceWeth).div(bn('2'));
+      console.log('half balance WETH of OWNER = ' + halfBalanceWeth);
+
+      await weth.approve(uniswapRouter.address, halfBalanceWeth);
+      let approvedWethToRouter = await weth.allowance(OWNER, uniswapRouter.address);
+      console.log('approved weth To Router = ' + approvedWethToRouter);
+
+      await uniswapRouter.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        halfBalanceWeth,
+        0,
+        [weth.address, sunnyBunnyToken.address],
+        //liquidityInstance.address,
+        OWNER,
+        new Date().getTime() + 3000
+      );
+
+      console.log('End of swap ETH for SunnyBunny token');
     });
 
-    it('should be possible to swap SunnyBunny tokens for ETH', async () => {
-      console.log('==================   swap ETH for SunnyBunny token   ================');
+    /**@author not ready yet */
+    /*it('should be possible to swap SunnyBunny tokens for ETH', async () => {
+      console.log('==================   swap SunnyBunny tokens for ETH   ================');
       const amount = bn('5').mul(BASE_UNIT); // 5 tokens
-      const amountETH = bn('1e16'); // 0,01 ether
 
       await sunnyBunnyToken.approve(uniswapRouter.address, amount);
       let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
@@ -154,6 +180,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       console.log('balance sunnyBunnyToken NOT_OWNER = ' + balance);
     });
+    */
 
     //Use remove liquidity from original Uniswap
     it('should be possible to remove liquidity on pair', async () => {
@@ -177,7 +204,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         new Date().getTime() + 3000
       );*/
 
-      //TODO - remove it if no need more
+      //TODO: test with small numbers - remove it if no need more
      //Without BN
       /*await uniswapRouter.removeLiquidity(
         sunnyBunnyToken.address, weth.address, liquidityAmount - 1200, 0, 0, OWNER,
@@ -190,6 +217,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         Error: Returned error: VM Exception while processing transaction: revert UniswapV2:
         TRANSFER_FAILED -- Reason given: UniswapV2: TRANSFER_FAILED.
       */
+
       //With BN
       await uniswapRouter.removeLiquidity(
         sunnyBunnyToken.address,
