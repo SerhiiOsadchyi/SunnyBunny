@@ -156,48 +156,28 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         path[1] = tokenAddress;
 
         /**@author use swapExactETHForTokens for token without fee */
-        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
                 _amountOutMin, path, address(this), block.timestamp
         );
 
     }
 
-    //todo make sure: buy tokens at a minimum price
-     function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public {
-        address weth = uniswapV2Router.WETH();
-        address[] memory path = new address[](2);
-        path[0] = weth;
-        path[1] = tokenAddress;
-
-        uniswapV2Router.swapTokensForExactETH(_amountOut, _amountInMax, path, address(this), block.timestamp);
-    }
-
-    //todo make sure:  **** Swap for ETH/SuB pair ****
+    //todo make sure:   Swap for ETH/SuB pair
 
     //todo make sure: sell tokens at maximum price
-     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
+    function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
 
-         /**@author use swapExactTokensForETH for token without fee */
+         // @author use swapExactTokensForETH for token without fee 
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 _amountIn, _amountOutMin, path, address(this), block.timestamp
         );
     }
 
-    //todo make sure: buy tokens at market price
-     function swapETHForExactTokens(uint _amountOut) public payable {
-        address weth = uniswapV2Router.WETH();
-        address[] memory path = new address[](2);
-        path[0] = weth;
-        path[1] = tokenAddress;
-
-        uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
-    }
-
-    /** todo remove if no need */
+    //todo remove if no need
     receive() external payable {
         emit Received(msg.sender, msg.value);
     }
@@ -224,3 +204,25 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         return address(this).balance;
     }
 }
+
+    /** @author: I think all in comments no need */
+
+    //todo make sure: buy tokens at a minimum price
+    /* function swapTokensForExactETH(uint _amountOut, uint _amountInMax) public {
+        address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
+
+        uniswapV2Router.swapTokensForExactETH(_amountOut, _amountInMax, path, address(this), block.timestamp);
+    } */
+
+    //todo make sure: buy tokens at market price
+    /* function swapETHForExactTokens(uint _amountOut) public payable {
+        address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
+
+        uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
+    } */

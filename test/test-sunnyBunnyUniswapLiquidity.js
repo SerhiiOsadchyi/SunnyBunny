@@ -85,13 +85,12 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     //Use add liquidity from original Uniswap
     it('should be possible to add liquidity on pair', async () => {
-
       console.log('==================     add liquidity     ================');
 
-      //const liquidityTokensAmount = bn('10').mul(BASE_UNIT); // 10 tokens
-      //const liquidityEtherAmount = bn('1').mul(BASE_UNIT); // 1 ETH
-      const liquidityTokensAmount = 20000; // 20000 tokens
-      const liquidityEtherAmount = 10000; // 10000 wei
+      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
+      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
+      //const liquidityTokensAmount = 20000; // 20000 tokens
+      //const liquidityEtherAmount = 10000; // 10000 wei
 
       const reservesBefore = await pairUniswap.getReserves();
       assertBNequal(reservesBefore[0], 0);
@@ -119,7 +118,6 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     //Use remove liquidity from original Uniswap
     it('should be possible to remove liquidity on pair', async () => {
-
       console.log('==================     remove liquidity     ================');
 
       let liquidityAmount = await pairUniswap.balanceOf(OWNER);
@@ -132,7 +130,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       let approvedPairUniswapToRouter = await pairUniswap.allowance(OWNER, uniswapRouter.address);
       console.log('approved PairUniswap To Router = ' + approvedPairUniswapToRouter);
 
-      // todo - почему так не работает - нет "weth.address"?
+      // todo - почему это не работает ?
       //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
       //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
       /*await uniswapRouter.removeLiquidityETH(
@@ -140,14 +138,22 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         new Date().getTime() + 3000
       );*/
 
-      //todo - непонятно как работает, см. ниже
+      //todo - remove it if no need more
+     //Without BN
+      /*await uniswapRouter.removeLiquidity(
+        sunnyBunnyToken.address, weth.address, liquidityAmount - 1200, 0, 0, OWNER,
+        new Date().getTime() + 3000
+      );*/
+
+      //todo - не проходит тест, если вычитаемая сумма меньще примерно 7% - это как-то связано с комиссией ?
       /*
         Если вместо "liquidityAmount - 1200" задать "liquidityAmount" - ошибка
         Error: Returned error: VM Exception while processing transaction: revert UniswapV2:
         TRANSFER_FAILED -- Reason given: UniswapV2: TRANSFER_FAILED.
       */
+      //With BN
       await uniswapRouter.removeLiquidity(
-        sunnyBunnyToken.address, weth.address, liquidityAmount - 1200, 0, 0, OWNER,
+        sunnyBunnyToken.address, weth.address, bn(liquidityAmount).sub(bn('1142277660168378331')), 0, 0, OWNER,
         new Date().getTime() + 3000
       );
 
@@ -158,15 +164,26 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       console.log('reservesAfter[0] = ' + reservesAfter[0]);
       console.log('reservesAfter[1] = ' + reservesAfter[1]);
 
-      /*assertBNequal(reservesAfter[0], 0);
-        assertBNequal(reservesAfter[1], 0);
-      */
-
-      assert.equal(liquidityAmount, 1200);
-      //assert.equal(reservesAfter[0], 0);
-      //assert.equal(reservesAfter[1], 0);
+      assertBNequal(liquidityAmount, '1142277660168378331');
+      //assert.equal(liquidityAmount, 1200);
 
     });
+
+    it('should be possible to swap ETH for SunnyBunny token', async () => {
+      console.log('==================   swap ETH for SunnyBunny token   ================');
+      const amount = bn('5').mul(BASE_UNIT); // 5 tokens
+      const amountETH = bn('5e17'); // 0,5 ether
+
+      await sunnyBunnyToken.approve(uniswapRouter.address, amount);
+      let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
+      console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);
+
+      await tokenUniswapLiquidity.swapExactETHForTokens(amount).call({from: OWNER, value: amountETH});
+
+      balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      console.log('balance sunnyBunnyToken NOT_OWNER = ' + balance);
+    });
+
 
   })
 
