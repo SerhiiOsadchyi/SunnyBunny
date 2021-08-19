@@ -9,6 +9,9 @@ contract('Sunny Bunny token', function(accounts) {
   // TODO - delete if not use anymore
   // afterEach('revert', ganache.revert);
 
+  // !! TODO - add to test transferFrom !!
+
+
   const bn = (input) => web3.utils.toBN(input);
   const assertBNequal = (bnOne, bnTwo) => assert.equal(bnOne.toString(), bnTwo.toString());
 
