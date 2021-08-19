@@ -97,12 +97,11 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }*/
 
     // Use ETH 
-    function addLiquid(uint _amountToken) public payable {
+    function addLiquidETH(uint _amountToken) public payable {
         // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
 
         transferTokensToContract(_amountToken);
-
         IERC20(tokenAddress).approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
@@ -117,7 +116,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         emit Log("amount token  = ", amountToken);
         emit Log("amount ETH  = ", amountETH);
         emit Log("amount liquidity  = ", liquidity);
-
     }
 
     function removeLiquid(uint _liquidity) external {
@@ -139,7 +137,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
                             //and parent removeETHLiquidityFromToken()
             block.timestamp + 20
         );
-
     }
 
     // **** SWAP ****
@@ -159,7 +156,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
                 _amountOutMin, path, address(this), block.timestamp
         );
-
     }
 
     //TODO make sure:   Swap for ETH/SuB pair
@@ -168,10 +164,12 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
-        path[0] = weth;
-        path[1] = tokenAddress;
+        path[0] = tokenAddress;
+        path[1] = weth;
 
-         // @author use swapExactTokensForETH for token without fee 
+        IERC20(tokenAddress).approve(router, _amountIn);
+
+        // @author use swapExactTokensForETH for token without fee 
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 _amountIn, _amountOutMin, path, address(this), block.timestamp
         );
