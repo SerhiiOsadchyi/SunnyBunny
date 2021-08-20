@@ -21,13 +21,16 @@ contract('Sunny Bunny token', function(accounts) {
   const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   const baseUnit = bn('1000000000000000000');
 
+  const addressFactory = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'; // any value - it not use in this test
+  const addressRouter = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'; // any value - it not use in this test
+
   let feeReceiver = accounts[3];
   let feePercent = 10;
   let sunnyBunnyToken;
 
   before('setup others', async function() {
     // deploy and setup main contracts
-    sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent);
+    sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent, addressRouter, addressFactory);
   });
 
   describe('General tests', async () => {
@@ -40,7 +43,7 @@ contract('Sunny Bunny token', function(accounts) {
     });
 
     it('should be transfer tokens from owner to an any address without fee', async () => {
-      const amount = bn('10000').mul(baseUnit) ; // 10,000 tokens, fee is 10%
+      const amount = bn('100').mul(baseUnit) ; // 100 tokens, fee is 10%
       await sunnyBunnyToken.transfer(NOT_OWNER, amount);
 
       const notOwnerBalance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
@@ -50,8 +53,50 @@ contract('Sunny Bunny token', function(accounts) {
       assertBNequal(bn(feeReceiverBalance), 0);
     });
 
+    it('success transferFrom tokens approved from owner (without fee)', async () => {
+      const amount = bn('500').mul(baseUnit); // 500 tokens, fee is 0%
+
+      const notOwnerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
+
+      await sunnyBunnyToken.approve(EXTRA_ADDRESS, bn(amount));
+      await sunnyBunnyToken.transferFrom(OWNER, NOT_OWNER, amount, { from: EXTRA_ADDRESS });
+
+      const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      console.log('transferFrom balance NOT_OWNER After Send = ' + notOwnerBalanceAfterSend);
+      const feeReceiverBalance = await sunnyBunnyToken.balanceOf(feeReceiver);
+
+      assertBNequal(bn(notOwnerBalanceAfterSend).sub(notOwnerBalanceBeforeSend), bn(amount));
+      assertBNequal(bn(feeReceiverBalance), 0);
+    });
+
+    it('success transferFrom tokens with fee (approved from not owner)', async () => {
+      //NOT_OWNER - token's owner; EXTRA_ADDRESS - sender; OWNER - new token's owner
+      const amount = bn('50').mul(baseUnit); // 50 tokens, fee is 10%
+      const amountFee = bn(amount).mul(bn('10')).div(bn('100'));
+      const amountWithFee = bn(amount).add(amountFee);
+      console.log('amountFee = ' + amountFee);
+      console.log('amountWithFee = ' + amountWithFee);
+
+      const notOwnerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      const ownerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(OWNER);
+      console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
+      await sunnyBunnyToken.approve(EXTRA_ADDRESS, bn(amountWithFee), { from: NOT_OWNER } );
+      await sunnyBunnyToken.transferFrom(NOT_OWNER, OWNER, amount, { from: EXTRA_ADDRESS });
+      const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      const ownerBalanceAfterSend = await sunnyBunnyToken.balanceOf(OWNER);
+      console.log('transferFrom balance NOT_OWNER After Send = ' + notOwnerBalanceAfterSend);
+
+      const feeReceiverBalance = await sunnyBunnyToken.balanceOf(feeReceiver);
+      console.log('transferFrom balance feeReceiver After Send = ' + feeReceiverBalance);
+
+      assertBNequal(bn(notOwnerBalanceBeforeSend).sub(notOwnerBalanceAfterSend), bn(amountWithFee));
+      assertBNequal(bn(ownerBalanceAfterSend).sub(ownerBalanceBeforeSend), bn(amount));
+      assertBNequal(bn(feeReceiverBalance), amountFee);
+    });
+
     it('should be transfer tokens from non-owner to an any address with fee', async () => {
-      const amount = bn('1000').mul(baseUnit); // 1,000 tokens
+      const amount = bn('10').mul(baseUnit); // 1,000 tokens
       const amountFee = amount / 10; // fee is 10%
 
        // Balances before a transaction
