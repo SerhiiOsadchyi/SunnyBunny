@@ -1,5 +1,6 @@
 const Ganache = require('./helpers/ganache');
 const { expectEvent, expectRevert, constants } = require("@openzeppelin/test-helpers");
+const truffleAssert = require('truffle-assertions');
 
 const SunnyBunny = artifacts.require('SunnyBunny');
 
@@ -13,7 +14,7 @@ contract('Sunny Bunny token', function(accounts) {
 
 
   const bn = (input) => web3.utils.toBN(input);
-  const assertBNequal = (bnOne, bnTwo) => assert.equal(bnOne.toString(), bnTwo.toString());
+  const assertBNequal = (bnOne, bnTwo, error = '') => assert.equal(bnOne.toString(), bnTwo.toString(), error);
 
   const OWNER = accounts[0];
   const NOT_OWNER = accounts[1];
@@ -25,12 +26,15 @@ contract('Sunny Bunny token', function(accounts) {
   const addressRouter = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D'; // any value - it not use in this test
 
   let feeReceiver = accounts[3];
-  let feePercent = 10;
+  let feePercent = 7;
   let sunnyBunnyToken;
 
   before('setup others', async function() {
     // deploy and setup main contracts
     sunnyBunnyToken = await SunnyBunny.new(feeReceiver, feePercent, addressRouter, addressFactory);
+    console.log('OWNER address = ' + OWNER);
+    console.log('NOT_OWNER address = ' + NOT_OWNER);
+    console.log('EXTRA_ADDRESS address = ' + EXTRA_ADDRESS);
   });
 
   describe('General tests', async () => {
@@ -72,8 +76,10 @@ contract('Sunny Bunny token', function(accounts) {
 
     it('success transferFrom tokens with fee (approved from not owner)', async () => {
       //NOT_OWNER - token's owner; EXTRA_ADDRESS - sender; OWNER - new token's owner
+      console.log('=============    transferFrom tokens with fee    ================ ');
+
       const amount = bn('50').mul(baseUnit); // 50 tokens, fee is 10%
-      const amountFee = bn(amount).mul(bn('10')).div(bn('100'));
+      const amountFee = bn(amount).mul(bn(feePercent)).div(bn('100'));
       const amountWithFee = bn(amount).add(amountFee);
       console.log('amountFee = ' + amountFee);
       console.log('amountWithFee = ' + amountWithFee);
@@ -81,8 +87,10 @@ contract('Sunny Bunny token', function(accounts) {
       const notOwnerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       const ownerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(OWNER);
       console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
+
       await sunnyBunnyToken.approve(EXTRA_ADDRESS, bn(amountWithFee), { from: NOT_OWNER } );
       await sunnyBunnyToken.transferFrom(NOT_OWNER, OWNER, amount, { from: EXTRA_ADDRESS });
+
       const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       const ownerBalanceAfterSend = await sunnyBunnyToken.balanceOf(OWNER);
       console.log('transferFrom balance NOT_OWNER After Send = ' + notOwnerBalanceAfterSend);
@@ -96,24 +104,46 @@ contract('Sunny Bunny token', function(accounts) {
     });
 
     it('should be transfer tokens from non-owner to an any address with fee', async () => {
-      const amount = bn('10').mul(baseUnit); // 1,000 tokens
-      const amountFee = amount / 10; // fee is 10%
+      console.log('=============    transfer tokens with fee    ================ ');
+
+      const amount = bn('10').mul(baseUnit); // 10 tokens
+      const amountFee = bn(amount).mul(bn(feePercent)).div(bn('100')); // fee is 7%
+      const amountWithFee = bn(amount).add(bn(amountFee)); // fee is 7%
+      console.log('amountWithFee = ' + amountWithFee);
 
        // Balances before a transaction
       const notOwnerBalanceBeforeSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
       const feeReceiverBalanceBeforeSend = await sunnyBunnyToken.balanceOf(feeReceiver);
       const extraAddressBeforeSend = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
 
-      await sunnyBunnyToken.transfer(EXTRA_ADDRESS, bn(amount),  { from: NOT_OWNER });
+      let eventLogs = await sunnyBunnyToken.transfer(EXTRA_ADDRESS, bn(amount),  { from: NOT_OWNER });
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       // Balances after a transaction
       const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+      console.log('transferFrom balance NOT_OWNER After Send = ' + notOwnerBalanceAfterSend);
       const feeReceiverBalanceAfterSend = await sunnyBunnyToken.balanceOf(feeReceiver);
       const extraAddressBalanceAfterSend = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
 
-      assertBNequal(bn(notOwnerBalanceBeforeSend).sub(notOwnerBalanceAfterSend), bn(amount).add(bn(amountFee)));
-      assertBNequal(bn(feeReceiverBalanceAfterSend).sub(feeReceiverBalanceBeforeSend), amountFee);
-      assertBNequal(bn(extraAddressBalanceAfterSend).sub(extraAddressBeforeSend), amount);
+      // TODO uncomment strings below for see events
+      //let tx = fdfsd
+
+      assertBNequal(
+          bn(notOwnerBalanceBeforeSend).sub(notOwnerBalanceAfterSend), 
+          amountWithFee,
+          'Wrong balance at NOT_OWNER'
+        );
+      assertBNequal(
+          bn(feeReceiverBalanceAfterSend).sub(feeReceiverBalanceBeforeSend), 
+          amountFee,
+          'Wrong balance at fee Receiver'
+        );
+      assertBNequal(
+          bn(extraAddressBalanceAfterSend).sub(extraAddressBeforeSend), 
+          amount,
+          'Wrong balance at extra Address'
+        );
 
     });
 
