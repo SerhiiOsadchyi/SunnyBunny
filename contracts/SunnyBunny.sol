@@ -23,7 +23,7 @@ contract SunnyBunny is ERC20, Ownable {
 
     address internal _feeReceiver
     ;
-    // !! TODO - add to test transferFrom !!
+
     constructor(
             address feeReciever, uint8 feePercent, address _router, address _factory
         ) ERC20(_name, _symbol) {
@@ -52,7 +52,7 @@ contract SunnyBunny is ERC20, Ownable {
         _feePercent = feePercent;
     }
 
-    function getFeePercent() view public onlyOwner returns(uint8) {
+    function getFeePercent() view public returns(uint8) {
         return _feePercent;
     }
 

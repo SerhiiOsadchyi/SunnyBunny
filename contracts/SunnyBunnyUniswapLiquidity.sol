@@ -50,7 +50,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     //IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(uniswapV2Router);
 
     function transferTokensToContract(uint _amountToken) public {
-        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+        tokenSuB.transferFrom(msg.sender, address(this), _amountToken);
     }
 
     function transferETHToContract() public payable {
@@ -102,7 +102,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uint256 amountSendETH = msg.value;
 
         transferTokensToContract(_amountToken);
-        IERC20(tokenAddress).approve(router, _amountToken);
+        tokenSuB.approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
@@ -152,8 +152,11 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         path[0] = weth;
         path[1] = tokenAddress;
 
+        uint8 fee = tokenSuB.getFeePercent();
+        uint256 amountETH = msg.value * (100 - fee) / 100;
+
         /**@author use swapExactETHForTokens for token without fee */
-        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
+        uniswapV2Router.swapExactETHForTokens{value: amountETH}(
                 _amountOutMin, path, address(this), block.timestamp
         );
     }
@@ -167,7 +170,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         path[0] = tokenAddress;
         path[1] = weth;
 
-        IERC20(tokenAddress).approve(router, _amountIn);
+        tokenSuB.approve(router, _amountIn);
 
         // @author use swapExactTokensForETH for token without fee 
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -187,15 +190,15 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     function getTokensBalanceOnContract() view external returns(uint256) {
-        return IERC20(tokenAddress).balanceOf(address(this));
+        return tokenSuB.balanceOf(address(this));
     }
 
     function getTokensBalanceSender() view external returns(uint256) {
-        return IERC20(tokenAddress).balanceOf(msg.sender);
+        return tokenSuB.balanceOf(msg.sender);
     }
 
     function getTokensAllowance() view external returns(uint256) {
-        return IERC20(tokenAddress).allowance(msg.sender, address(this));
+        return tokenSuB.allowance(msg.sender, address(this));
     }
 
     function getETHContractBalance() view external returns(uint256) {

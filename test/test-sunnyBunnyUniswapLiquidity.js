@@ -2,7 +2,7 @@ const Ganache = require('./helpers/ganache');
 const deployUniswap = require('./helpers/deployUniswap');
 const { send, expectEvent, expectRevert, constants } = require('@openzeppelin/test-helpers');
 const IUniswapV2Pair = artifacts.require('@uniswap/v2-core/IUniswapV2Pair');
-const IERC20 = artifacts.require('@openzeppelin/contracts/token/IERC20');
+const truffleAssert = require('truffle-assertions');
 
 const SunnyBunny = artifacts.require('SunnyBunny');
 const SunnyBunnyUniswapLiquidity = artifacts.require('SunnyBunnyUniswapLiquidity');
@@ -92,7 +92,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
 
-      await uniswapRouter.addLiquidityETH(
+      let eventLogs = await uniswapRouter.addLiquidityETH(
         sunnyBunnyToken.address,
         liquidityTokensAmount,
         0,
@@ -101,6 +101,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
       );
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       const reservesAfter = await pairUniswap.getReserves();
 
@@ -121,7 +122,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       /**@author странный результат 100*1e18 - 10*1e18 = 90,933891061198508685*1e18. Откудв? */
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
@@ -138,7 +140,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      await liquidityInstance.swapExactTokensForETH(bn(amount).div(bn("2")), 0);
+      let eventLogs = await liquidityInstance.swapExactTokensForETH(bn(amount).div(bn("2")), 0);
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       balance = await weth.balanceOf(pairAddress);
       console.log('balance weth of pair after a swap = ' + balance);
@@ -161,13 +164,13 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       // TODO - не работает, если комиссия больше 0
       //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
       //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
-      await uniswapRouter.removeLiquidityETH(
+      let eventLogs = await uniswapRouter.removeLiquidityETH(
         sunnyBunnyToken.address, liquidityAmount, 0, 0, OWNER,
         new Date().getTime() + 3000
       );
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       const reservesAfter = await pairUniswap.getReserves();
-
       liquidityAmount = await pairUniswap.balanceOf(OWNER);
       console.log('liquidity Amount at OWNER  after remove liquidity = ' + liquidityAmount);
       console.log('reservesAfter[0] = ' + reservesAfter[0]);
@@ -184,7 +187,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success add liquidity on pair', async () => {
       console.log('==================     add liquidity with 10% of fee    ================');
 
-      feePercent = await sunnyBunnyToken.setFeePercent(10);
+      await sunnyBunnyToken.setFeePercent(10);
+      feePercent = await sunnyBunnyToken.getFeePercent();
 
       const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
       const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
@@ -220,7 +224,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       /**@author странный результат 100*1e18 - 10*1e18 = 90,933891061198508685*1e18. Откудв? */
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
@@ -237,7 +242,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      await liquidityInstance.swapExactTokensForETH(bn(amount).div(bn("2")), 0);
+      let eventLogs = await liquidityInstance.swapExactTokensForETH(bn(amount).div(bn("2")), 0);
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       balance = await weth.balanceOf(pairAddress);
       console.log('balance weth of pair after a swap = ' + balance);
@@ -247,10 +253,20 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success remove liquidity on pair', async () => {
       console.log('==================     remove liquidity with 10% of fee     ================');
 
-      let liquidityAmount = await pairUniswap.balanceOf(OWNER);
-      console.log('balance OWNER liquidityAmount before remove liquidity = ' + liquidityAmount);
+      balance = await pairUniswap.balanceOf(OWNER);
+      console.log('balance OWNER before remove liquidity = ' + balance);
 
-      await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
+      //TODO почему баланс пары не зависит от адреса пользователя ?
+      let balanceRouterTokens = await sunnyBunnyToken.balanceOf(pairAddress, {from: NOT_OWNER});
+      console.log('balance Tokens at Uniswap from NOT_OWNER before remove liquidity = ' + balanceRouterTokens);
+      balanceRouterTokens = await sunnyBunnyToken.balanceOf(pairAddress);
+      console.log('balance Tokens at Uniswap from OWNER before remove liquidity = ' + balanceRouterTokens);
+
+      const feeMultiplier = 100 - feePercent;
+      const liquidityAmount = bn(balance).mul(bn(feeMultiplier)).div(bn('100'));
+      console.log('balance OWNER liquidityAmount with fee before remove liquidity = ' + liquidityAmount);
+
+     await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
       balance = await pairUniswap.balanceOf(uniswapRouter.address);
       console.log('balance pairUniswap at uniswapRouter = ' + balance);
 
@@ -260,10 +276,11 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       // TODO - не работает, если комиссия больше 0
       //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
       //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
-      await uniswapRouter.removeLiquidityETH(
+      let eventLogs = await uniswapRouter.removeLiquidityETH(
         sunnyBunnyToken.address, liquidityAmount, 0, 0, OWNER,
         new Date().getTime() + 3000
       );
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       const reservesAfter = await pairUniswap.getReserves();
 

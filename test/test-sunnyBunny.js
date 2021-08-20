@@ -10,9 +10,6 @@ contract('Sunny Bunny token', function(accounts) {
   // TODO - delete if not use anymore
   // afterEach('revert', ganache.revert);
 
-  // !! TODO - add to test transferFrom !!
-
-
   const bn = (input) => web3.utils.toBN(input);
   const assertBNequal = (bnOne, bnTwo, error = '') => assert.equal(bnOne.toString(), bnTwo.toString(), error);
 
@@ -48,7 +45,8 @@ contract('Sunny Bunny token', function(accounts) {
 
     it('should be transfer tokens from owner to an any address without fee', async () => {
       const amount = bn('100').mul(baseUnit) ; // 100 tokens, fee is 10%
-      await sunnyBunnyToken.transfer(NOT_OWNER, amount);
+      let eventLogs = await sunnyBunnyToken.transfer(NOT_OWNER, amount);
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       const notOwnerBalance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       const feeReceiverBalance = await sunnyBunnyToken.balanceOf(feeReceiver);
