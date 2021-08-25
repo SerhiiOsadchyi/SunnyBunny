@@ -122,7 +122,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      //let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      let eventLogs = await liquidityInstance.swapExactETHForTokens({value: bn(amountETH) });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       /**@author странный результат 100*1e18 - 10*1e18 = 90,933891061198508685*1e18. Откудв? */
@@ -224,10 +225,10 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
-      let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      //let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
+      let eventLogs = await liquidityInstance.swapExactETHForTokens( {value: bn(amountETH) });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      /**@author странный результат 100*1e18 - 10*1e18 = 90,933891061198508685*1e18. Откудв? */
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair after a swap = ' + balance);
     });
@@ -247,6 +248,10 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       balance = await weth.balanceOf(pairAddress);
       console.log('balance weth of pair after a swap = ' + balance);
+
+      // !! todo - как это понимать?
+    /**  if (address(config.infinityToken) < address(config.weth)) {*/
+
     });
 
     //Use remove liquidity from original Uniswap
@@ -266,7 +271,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       const liquidityAmount = bn(balance).mul(bn(feeMultiplier)).div(bn('100'));
       console.log('balance OWNER liquidityAmount with fee before remove liquidity = ' + liquidityAmount);
 
-     await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
+      await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
       balance = await pairUniswap.balanceOf(uniswapRouter.address);
       console.log('balance pairUniswap at uniswapRouter = ' + balance);
 

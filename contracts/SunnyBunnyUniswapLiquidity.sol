@@ -11,6 +11,7 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
+//import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 
 contract SunnyBunnyUniswapLiquidity is Ownable {
 
@@ -20,6 +21,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     IUniswapV2Router02 private uniswapV2Router;
     IUniswapV2Factory private uniswapV2Factory;
+   // UniswapV2Library private uniswapV2Library;
     IWETH private WETH;
     //IUniswapV2Pair private tokenPair;
     address public tokenAddress;
@@ -38,12 +40,14 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     */
 
     address router;
+    address factory;
 
     constructor(address _tokenAddress, address _router, address _factory) {
         tokenSuB = SunnyBunny(_tokenAddress);
         uniswapV2Router = IUniswapV2Router02(_router);
         uniswapV2Factory = IUniswapV2Factory(_factory);
         router = _router;
+        factory = _factory;
         tokenAddress = _tokenAddress;
     }
 
@@ -142,22 +146,28 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     // **** SWAP ****
     // requires the initial amount to have already been sent to the first pair
 
+    // !! todo - как это понимать?!!
+    /**  if (address(config.infinityToken) < address(config.weth)) {*/
+
     //TODO make sure:  **** Swap for SuB/ETH pair ****
 
     //TODO make sure: sell tokens at a maximum price
-    function swapExactETHForTokens(uint _amountOutMin) public payable {
+    function swapExactETHForTokens() public payable {
         // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
         path[1] = tokenAddress;
 
-        uint8 fee = tokenSuB.getFeePercent();
-        uint256 amountETH = msg.value * (100 - fee) / 100;
+        uint feeETHAmount = tokenSuB.getFeePercent() * msg.value / 100;
+        uint256 amountETH = msg.value - feeETHAmount;
+
+        //(uint reserveSub, uint reserveETH) = uniswapV2Library.getReserves(factory, tokenAddress, weth);
+       // uint tokensToFee = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
 
         /**@author use swapExactETHForTokens for token without fee */
         uniswapV2Router.swapExactETHForTokens{value: amountETH}(
-                _amountOutMin, path, address(this), block.timestamp
+                0, path, address(this), block.timestamp
         );
     }
 
