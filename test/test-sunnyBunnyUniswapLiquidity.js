@@ -60,6 +60,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     balance = await sunnyBunnyToken.balanceOf(OWNER);
     console.log('balance sunnyBunnyToken OWNER = ' + balance);
 
+    await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)));
+
     console.log('OWNER address = ' + OWNER);
     console.log('uniswapRouter address = ' + uniswapRouter.address);
     console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
@@ -178,7 +180,6 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       console.log('reservesAfter[1] = ' + reservesAfter[1]);
 
       assertBNequal(liquidityAmount, 0);
-
     });
   })
 
@@ -219,11 +220,18 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
     it('success swap ETH for SunnyBunny tokens', async () => {
       console.log('==================   swap ETH for SunnyBunny token with 10% of fee  ================');
-      const amountETH = bn('1').mul(BASE_UNIT); // 1 ether
+      const amountETH = bn('3').mul(BASE_UNIT).div(bn(10)); // 0.2 ether
       console.log('amount ETH = ' + amountETH);
 
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
+
+      const reserves = await pairUniswap.getReserves();
+      console.log('reserves[0] = ' + reserves[0]);
+      console.log('reserves[1] = ' + reserves[1]);
+
+      const tokensToUniswap = await uniswapRouter.quote(amountETH, reserves[0], reserves[1]);
+      console.log('tokensToUniswap = ' + tokensToUniswap);
 
       //let eventLogs = await liquidityInstance.swapExactETHForTokens(0, {value: bn(amountETH) });
       let eventLogs = await liquidityInstance.swapExactETHForTokens( {value: bn(amountETH) });

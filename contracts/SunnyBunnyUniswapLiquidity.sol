@@ -114,7 +114,9 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     //TODO make sure: sell tokens at a maximum price
     function swapExactETHForTokens() public payable {
-        // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        uint256 amountSendETH = msg.value;
+        address feeReceiver = tokenSuB.getFeeReceiver();
+
         address weth = uniswapV2Router.WETH();
         address[] memory path = new address[](2);
         path[0] = weth;
@@ -122,19 +124,31 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
         uint8 feePercent = tokenSuB.getFeePercent();
         uint feeETHAmount = feePercent * msg.value / 100;
-        uint256 amountETH = msg.value - feeETHAmount;
+        uint amountETHRequired = msg.value - feeETHAmount;
 
-        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
-        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pair);
+        address pairAddress = uniswapV2Factory.getPair(weth, tokenAddress);
+        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pairAddress);
         (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
-        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
+        uint tokensToUniswap = uniswapV2Router.quote(amountETHRequired, reserveETH, reserveSub);
         uint feeTokensAmount = tokensToUniswap * feePercent / 100;
-        tokenSuB.transfer(tokenSuB.getFeeReceiver(), feeTokensAmount);
+
+        /** @dev tokens at contract's balance have to enough for a swap */
+        require(tokenSuB.balanceOf(address(this)) >= (tokensToUniswap + feeTokensAmount),"SuB tokens not enough now");
+
+        IWETH(weth).transfer(pairAddress, amountSendETH);
+        tokenSuB.transfer(pairAddress, tokensToUniswap);
+
+        uint liquidityCreated = IUniswapV2Pair(pairAddress).mint(address(this));
+
+        if (feeTokensAmount > 0 && feeReceiver != address(0)) {
+            tokenSuB.transfer(feeReceiver, feeTokensAmount);
+        }
 
         /**@author use swapExactETHForTokens for token without fee */
-        uniswapV2Router.swapExactETHForTokens{value: amountETH}(
-                0, path, address(this), block.timestamp
+        /*uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
+                1, path, address(this), block.timestamp
         );
+        */
     }
 
     //TODO make sure:   Swap for ETH/SuB pair
@@ -181,6 +195,44 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         return address(this).balance;
     }
 }
+    /** ============  DELETE ALL BELOW ============= */
+
+        // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        /*address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
+
+        uint8 feePercent = tokenSuB.getFeePercent();
+        uint feeETHAmount = feePercent * msg.value / 100;
+        uint256 amountETH = msg.value - feeETHAmount;
+
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
+        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pair);
+        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
+        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
+        uint feeTokensAmount = tokensToUniswap * feePercent / 100;
+        //tokenSuB.transfer(tokenSuB.getFeeReceiver(), feeTokensAmount);
+        */
+
+        /*if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
+        if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
+        if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
+        balance0 = IERC20(_token0).balanceOf(address(this));
+        balance1 = IERC20(_token1).balanceOf(address(this));
+        }
+        uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
+        uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
+        require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
+        { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
+        uint balance0Adjusted = balance0.mul(1000).sub(amount0In.mul(3));
+        uint balance1Adjusted = balance1.mul(1000).sub(amount1In.mul(3));
+        require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'UniswapV2: K');
+        }
+
+        _update(balance0, balance1, _reserve0, _reserve1);
+        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
+        */
 
     /** @author: I think all in comments no need */
 
