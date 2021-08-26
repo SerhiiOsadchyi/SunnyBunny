@@ -10,6 +10,7 @@ import "./SunnyBunny.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
+import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IWETH.sol";
 //import "@uniswap/v2-periphery/contracts/libraries/UniswapV2Library.sol";
 
@@ -23,7 +24,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     IUniswapV2Factory private uniswapV2Factory;
    // UniswapV2Library private uniswapV2Library;
     IWETH private WETH;
-    //IUniswapV2Pair private tokenPair;
+    //IUniswapV2Pair uniswapPair;
     address public tokenAddress;
 
     /** @dev Address from doc https://uniswap.org/docs/v2/smart-contracts/factory/#address */
@@ -60,47 +61,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function transferETHToContract() public payable {
     }
 
-    //TODO почему так не работает?
-    /*address public tokenUniswapPair;
-    function createUniswapPair() public onlyOwner returns (address) {
-        require(tokenUniswapPair == address(0), "Token: pool already created");
-        tokenUniswapPair = uniswapV2Factory.createPair(
-            address(uniswapV2Router.WETH()),
-            tokenAddress
-        );
-        return tokenUniswapPair;
-    }*/
-
-    /** Convert ETH to WETH
-    function addLiquid(uint _amountToken, uint _amountETH) public payable {
-        // TODO - remove it if no need more
-        require(msg.value >= _amountETH, "ETH is not enough");
-        //uint256 amountSendETH = msg.value;
-        address weth = uniswapV2Router.WETH();
-
-        transferTokensToContract(_amountToken, tokenAddress);
-        transferTokensToContract(_amountETH, weth);
-
-        IERC20(tokenAddress).approve(router, _amountToken);
-        IERC20(weth).approve(router, _amountETH);
-
-        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidity(
-            tokenAddress,
-            weth,
-            _amountToken,
-            _amountETH,
-            1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
-            1, // for change add _amountETHMin to argument for this function and parent addLiquidity()
-            msg.sender,
-            block.timestamp
-        );
-
-        emit Log("amount token  = ", amountToken);
-        emit Log("amount ETH  = ", amountETH);
-        emit Log("amount liquidity  = ", liquidity);
-    }*/
-
-    // Use ETH 
+    // Use ETH
     function addLiquidETH(uint _amountToken) public payable {
         // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
@@ -123,7 +84,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 
     function removeLiquid(uint _liquidity) external {
-        // TODO Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
+        // !! TODO Почему код "weth", "pair" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         // get address of Token pair Uniswap V2 LP
         address weth = uniswapV2Router.WETH();
         address pair = uniswapV2Factory.getPair(tokenAddress, weth);
@@ -159,11 +120,16 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         path[0] = weth;
         path[1] = tokenAddress;
 
-        uint feeETHAmount = tokenSuB.getFeePercent() * msg.value / 100;
+        uint8 feePercent = tokenSuB.getFeePercent();
+        uint feeETHAmount = feePercent * msg.value / 100;
         uint256 amountETH = msg.value - feeETHAmount;
 
-        //(uint reserveSub, uint reserveETH) = uniswapV2Library.getReserves(factory, tokenAddress, weth);
-       // uint tokensToFee = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
+        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pair);
+        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
+        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
+        uint feeTokensAmount = tokensToUniswap * feePercent / 100;
+        tokenSuB.transfer(tokenSuB.getFeeReceiver(), feeTokensAmount);
 
         /**@author use swapExactETHForTokens for token without fee */
         uniswapV2Router.swapExactETHForTokens{value: amountETH}(
@@ -182,7 +148,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
         tokenSuB.approve(router, _amountIn);
 
-        // @author use swapExactTokensForETH for token without fee 
+        // @author use swapExactTokensForETH for token without fee
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
                 _amountIn, _amountOutMin, path, address(this), block.timestamp
         );
@@ -237,3 +203,43 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
         uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
     } */
+
+        //TODO почему так не работает?
+    /*address public tokenUniswapPair;
+    function createUniswapPair() public onlyOwner returns (address) {
+        require(tokenUniswapPair == address(0), "Token: pool already created");
+        tokenUniswapPair = uniswapV2Factory.createPair(
+            address(uniswapV2Router.WETH()),
+            tokenAddress
+        );
+        return tokenUniswapPair;
+    }*/
+
+    /** Convert ETH to WETH
+    function addLiquid(uint _amountToken, uint _amountETH) public payable {
+        // TODO - remove it if no need more
+        require(msg.value >= _amountETH, "ETH is not enough");
+        //uint256 amountSendETH = msg.value;
+        address weth = uniswapV2Router.WETH();
+
+        transferTokensToContract(_amountToken, tokenAddress);
+        transferTokensToContract(_amountETH, weth);
+
+        IERC20(tokenAddress).approve(router, _amountToken);
+        IERC20(weth).approve(router, _amountETH);
+
+        (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidity(
+            tokenAddress,
+            weth,
+            _amountToken,
+            _amountETH,
+            1, // for change add _amountTokenMin like argument for this function and parent addLiquidity()
+            1, // for change add _amountETHMin to argument for this function and parent addLiquidity()
+            msg.sender,
+            block.timestamp
+        );
+
+        emit Log("amount token  = ", amountToken);
+        emit Log("amount ETH  = ", amountETH);
+        emit Log("amount liquidity  = ", liquidity);
+    }*/

@@ -42,7 +42,7 @@ contract SunnyBunny is ERC20, Ownable {
         _feeReceiver = feeReceiver;
     }
 
-    function getFeeReceiver() view public onlyOwner returns(address) {
+    function getFeeReceiver() view public returns(address) {
         return _feeReceiver;
     }
 
