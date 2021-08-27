@@ -60,8 +60,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
 
-        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
-        IERC20(tokenAddress).approve(router, _amountToken);
+        tokenSuB.transferFrom(msg.sender, address(this), _amountToken);
+        tokenSuB.approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
@@ -127,30 +127,19 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
         uint feeTokensAmount = tokensToUniswap * feePercent / 100;
 
+        /** TODO:
+        * After add removeLiquidity write a function that remove liquidity for feeETHAmount and send 
+        * feeTokensAmount to feeReceiver
+         */
+        //tokenSuB.transferFrom(msg.sender, address(this), _amountToken);
+
         uniswapV2Router.swapExactETHForTokens{value: amountETH}(
                 1, path, address(this), block.timestamp
         );
 
-        //IWETH(weth).transfer(pairAddress, amountETH);
-
-        /**@author use swapExactETHForTokens for token without fee */
-        /*uniswapV2Router.swapExactTokensForTokens(
-               amountETH, 1, path, address(this), block.timestamp
+        /*uniswapV2Router.swapExactETHForTokens{value: feeETHAmount}(
+                1, path, feeReceiver, block.timestamp
         );*/
-
-        /** @dev tokens at contract's balance have to enough for a swap */
-        /* delete code if no need more
-        require(tokenSuB.balanceOf(address(this)) >= (tokensToUniswap + feeTokensAmount),"SuB tokens not enough now");
-
-        IWETH(weth).transfer(pairAddress, amountSendETH);
-        tokenSuB.transfer(pairAddress, tokensToUniswap);
-
-        uint liquidityCreated = IUniswapV2Pair(pairAddress).mint(address(this));
-
-        if (feeTokensAmount > 0 && feeReceiver != address(0)) {
-            tokenSuB.transfer(feeReceiver, feeTokensAmount);
-        }
-        */
     }
 
     //TODO make sure:   Swap for ETH/SuB pair
@@ -280,43 +269,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         );
     }*/
 
-        // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
-        /*address weth = uniswapV2Router.WETH();
-        address[] memory path = new address[](2);
-        path[0] = weth;
-        path[1] = tokenAddress;
-
-        uint8 feePercent = tokenSuB.getFeePercent();
-        uint feeETHAmount = feePercent * msg.value / 100;
-        uint256 amountETH = msg.value - feeETHAmount;
-
-        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
-        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pair);
-        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
-        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
-        uint feeTokensAmount = tokensToUniswap * feePercent / 100;
-        //tokenSuB.transfer(tokenSuB.getFeeReceiver(), feeTokensAmount);
-        */
-
-        /*if (amount0Out > 0) _safeTransfer(_token0, to, amount0Out); // optimistically transfer tokens
-        if (amount1Out > 0) _safeTransfer(_token1, to, amount1Out); // optimistically transfer tokens
-        if (data.length > 0) IUniswapV2Callee(to).uniswapV2Call(msg.sender, amount0Out, amount1Out, data);
-        balance0 = IERC20(_token0).balanceOf(address(this));
-        balance1 = IERC20(_token1).balanceOf(address(this));
-        }
-        uint amount0In = balance0 > _reserve0 - amount0Out ? balance0 - (_reserve0 - amount0Out) : 0;
-        uint amount1In = balance1 > _reserve1 - amount1Out ? balance1 - (_reserve1 - amount1Out) : 0;
-        require(amount0In > 0 || amount1In > 0, 'UniswapV2: INSUFFICIENT_INPUT_AMOUNT');
-        { // scope for reserve{0,1}Adjusted, avoids stack too deep errors
-        uint balance0Adjusted = balance0.mul(1000).sub(amount0In.mul(3));
-        uint balance1Adjusted = balance1.mul(1000).sub(amount1In.mul(3));
-        require(balance0Adjusted.mul(balance1Adjusted) >= uint(_reserve0).mul(_reserve1).mul(1000**2), 'UniswapV2: K');
-        }
-
-        _update(balance0, balance1, _reserve0, _reserve1);
-        emit Swap(msg.sender, amount0In, amount1In, amount0Out, amount1Out, to);
-        */
-
     /** @author: I think all in comments no need */
 
     //TODO make sure: buy tokens at a minimum price
@@ -339,16 +291,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapV2Router.swapETHForExactTokens(_amountOut, path, address(this), block.timestamp);
     } */
 
-        //TODO почему так не работает?
-    /*address public tokenUniswapPair;
-    function createUniswapPair() public onlyOwner returns (address) {
-        require(tokenUniswapPair == address(0), "Token: pool already created");
-        tokenUniswapPair = uniswapV2Factory.createPair(
-            address(uniswapV2Router.WETH()),
-            tokenAddress
-        );
-        return tokenUniswapPair;
-    }*/
 
     /** Convert ETH to WETH
     function addLiquid(uint _amountToken, uint _amountETH) public payable {
