@@ -52,12 +52,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         tokenAddress = _tokenAddress;
     }
 
-    //IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(uniswapV2Router);
-
-    function transferTokensToContract(uint _amountToken) public {
-        tokenSuB.transferFrom(msg.sender, address(this), _amountToken);
-    }
-
     function transferETHToContract() public payable {
     }
 
@@ -66,8 +60,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
 
-        transferTokensToContract(_amountToken);
-        tokenSuB.approve(router, _amountToken);
+        IERC20(tokenAddress).transferFrom(msg.sender, address(this), _amountToken);
+        IERC20(tokenAddress).approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
             tokenAddress,
@@ -113,6 +107,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     //TODO make sure:  **** Swap for SuB/ETH pair ****
 
     //TODO make sure: sell tokens at a maximum price
+    // WETH for tokens
     function swapExactETHForTokens() public payable {
         uint256 amountSendETH = msg.value;
         address feeReceiver = tokenSuB.getFeeReceiver();
@@ -123,16 +118,28 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         path[1] = tokenAddress;
 
         uint8 feePercent = tokenSuB.getFeePercent();
-        uint feeETHAmount = feePercent * msg.value / 100;
-        uint amountETHRequired = msg.value - feeETHAmount;
+        uint feeETHAmount = feePercent * amountSendETH / 100;
+        uint amountETH = amountSendETH - feeETHAmount;
 
         address pairAddress = uniswapV2Factory.getPair(weth, tokenAddress);
         IUniswapV2Pair uniswapPair = IUniswapV2Pair(pairAddress);
         (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
-        uint tokensToUniswap = uniswapV2Router.quote(amountETHRequired, reserveETH, reserveSub);
+        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
         uint feeTokensAmount = tokensToUniswap * feePercent / 100;
 
+        uniswapV2Router.swapExactETHForTokens{value: amountETH}(
+                1, path, address(this), block.timestamp
+        );
+
+        //IWETH(weth).transfer(pairAddress, amountETH);
+
+        /**@author use swapExactETHForTokens for token without fee */
+        /*uniswapV2Router.swapExactTokensForTokens(
+               amountETH, 1, path, address(this), block.timestamp
+        );*/
+
         /** @dev tokens at contract's balance have to enough for a swap */
+        /* delete code if no need more
         require(tokenSuB.balanceOf(address(this)) >= (tokensToUniswap + feeTokensAmount),"SuB tokens not enough now");
 
         IWETH(weth).transfer(pairAddress, amountSendETH);
@@ -143,11 +150,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         if (feeTokensAmount > 0 && feeReceiver != address(0)) {
             tokenSuB.transfer(feeReceiver, feeTokensAmount);
         }
-
-        /**@author use swapExactETHForTokens for token without fee */
-        /*uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
-                1, path, address(this), block.timestamp
-        );
         */
     }
 
@@ -196,6 +198,87 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     }
 }
     /** ============  DELETE ALL BELOW ============= */
+
+    /** try to transfer tokens directly to Uniswap */
+      /*
+       function swapExactETHForTokens() public payable {
+        uint256 amountSendETH = msg.value;
+        address feeReceiver = tokenSuB.getFeeReceiver();
+
+        address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
+
+        uint8 feePercent = tokenSuB.getFeePercent();
+        uint feeETHAmount = feePercent * msg.value / 100;
+        uint amountETHRequired = msg.value - feeETHAmount;
+
+        address pairAddress = uniswapV2Factory.getPair(weth, tokenAddress);
+        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pairAddress);
+        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
+        uint tokensToUniswap = uniswapV2Router.quote(amountETHRequired, reserveETH, reserveSub);
+        uint feeTokensAmount = tokensToUniswap * feePercent / 100;
+
+        /** @dev tokens at contract's balance have to enough for a swap 
+        require(tokenSuB.balanceOf(address(this)) >= (tokensToUniswap + feeTokensAmount),"SuB tokens not enough now");
+
+        IWETH(weth).transfer(pairAddress, amountSendETH);
+        tokenSuB.transfer(pairAddress, tokensToUniswap);
+
+        uint liquidityCreated = IUniswapV2Pair(pairAddress).mint(address(this));
+
+        if (feeTokensAmount > 0 && feeReceiver != address(0)) {
+            tokenSuB.transfer(feeReceiver, feeTokensAmount);
+        }
+
+        /**@author use swapExactETHForTokens for token without fee */
+        /*uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: msg.value}(
+                1, path, address(this), block.timestamp
+        );
+        
+    }
+    */
+        // ETH for tokens
+    /*
+    function swapExactETHForTokens() public payable {
+        uint256 amountSendETH = msg.value;
+        address feeReceiver = tokenSuB.getFeeReceiver();
+
+        address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = weth;
+        path[1] = tokenAddress;
+
+        uint8 feePercent = tokenSuB.getFeePercent();
+        uint feeETHAmount = feePercent * amountSendETH / 100;
+        uint amountETH = amountSendETH - feeETHAmount;
+
+        address pairAddress = uniswapV2Factory.getPair(weth, tokenAddress);
+        IUniswapV2Pair uniswapPair = IUniswapV2Pair(pairAddress);
+        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
+        uint tokensToUniswap = uniswapV2Router.quote(amountETH, reserveETH, reserveSub);
+        uint feeTokensAmount = tokensToUniswap * feePercent / 100;
+
+        /** @dev tokens at contract's balance have to enough for a swap 
+        /* delete code if no need more
+        require(tokenSuB.balanceOf(address(this)) >= (tokensToUniswap + feeTokensAmount),"SuB tokens not enough now");
+
+        IWETH(weth).transfer(pairAddress, amountSendETH);
+        tokenSuB.transfer(pairAddress, tokensToUniswap);
+
+        uint liquidityCreated = IUniswapV2Pair(pairAddress).mint(address(this));
+
+        if (feeTokensAmount > 0 && feeReceiver != address(0)) {
+            tokenSuB.transfer(feeReceiver, feeTokensAmount);
+        }
+        
+
+        //**@author use swapExactETHForTokens for token without fee 
+        uniswapV2Router.swapExactETHForTokens{value: amountETH}(
+                1, path, address(this), block.timestamp
+        );
+    }*/
 
         // TODO Почему код "path" дублируют в каждой функции, а не создают одельную переменную после конструктора?
         /*address weth = uniswapV2Router.WETH();

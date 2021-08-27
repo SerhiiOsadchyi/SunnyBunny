@@ -218,9 +218,56 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       }
     });
 
+    //Use add liquidity from original Uniswap
+    it('success add liquidity on pair WETH - token', async () => {
+      console.log('==================     add liquidity  WETH - token with 10% of fee    ================');
+
+      //await sunnyBunnyToken.setFeePercent(10);
+      //feePercent = await sunnyBunnyToken.getFeePercent();
+
+      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
+      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
+
+      await weth.deposit({value: liquidityEtherAmount});
+      let balanceWeth = await weth.balanceOf(OWNER);
+      console.log('balance WETH of OWNER = ' + balanceWeth);
+
+      await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
+
+      let halfBalanceWeth = bn(balanceWeth).div(bn('2'));
+      console.log('half balance WETH of OWNER = ' + halfBalanceWeth);
+
+      await weth.approve(uniswapRouter.address, halfBalanceWeth);
+      let approvedWethToRouter = await weth.allowance(OWNER, uniswapRouter.address);
+      console.log('approved weth To Router = ' + approvedWethToRouter);
+      console.log('weth.address = ' + weth.address);
+
+
+      await uniswapRouter.addLiquidity(
+        weth.address,
+        sunnyBunnyToken.address,
+        halfBalanceWeth,
+        liquidityTokensAmount,
+        0,
+        0,
+        OWNER,
+        new Date().getTime() + 3000
+      );
+
+      const reservesAfter = await pairUniswap.getReserves();
+
+      if (await pairUniswap.token0() == sunnyBunnyToken.address) {
+        console.log('liquidity Tokens Amount = ' + reservesAfter[0]);
+        console.log('liquidity Ether Amount = ' + reservesAfter[1]);
+      } else {
+        console.log('liquidity Tokens Amount = ' + reservesAfter[1]);
+        console.log('liquidity Ether Amount = ' + reservesAfter[0]);
+      }
+    });
+
     it('success swap ETH for SunnyBunny tokens', async () => {
       console.log('==================   swap ETH for SunnyBunny token with 10% of fee  ================');
-      const amountETH = bn('3').mul(BASE_UNIT).div(bn(10)); // 0.2 ether
+      const amountETH = bn('2').mul(BASE_UNIT).div(bn(10)); // 0.2 ether
       console.log('amount ETH = ' + amountETH);
 
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
