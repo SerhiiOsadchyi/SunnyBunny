@@ -42,8 +42,11 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     address router;
     address factory;
+    bool private isUniswap = false;
 
-    constructor(address _tokenAddress, address _router, address _factory) {
+    constructor(
+        address _tokenAddress, address _router, address _factory, address feeReciever, uint8 feePercent
+        ) {
         tokenSuB = SunnyBunny(_tokenAddress);
         uniswapV2Router = IUniswapV2Router02(_router);
         uniswapV2Factory = IUniswapV2Factory(_factory);
@@ -55,12 +58,19 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
     function transferETHToContract() public payable {
     }
 
+    modifier removeFee {
+        require(!isUniswap, 'SuB: reentrancy violation');
+        isUniswap = true;
+        _;
+        isUniswap = false;
+    }
+
     // Use ETH
     function addLiquidETH(uint _amountToken) public payable {
         // TODO - remove it if no need more
         uint256 amountSendETH = msg.value;
 
-        tokenSuB.transferFrom(msg.sender, address(this), _amountToken);
+        tokenSuB.transferFromForUniswap(msg.sender, address(this), _amountToken);
         tokenSuB.approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(

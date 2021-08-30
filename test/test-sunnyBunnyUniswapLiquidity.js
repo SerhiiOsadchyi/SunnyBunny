@@ -197,6 +197,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
 
+      let fee = await sunnyBunnyToken.getFeePercent();
+      console.log('fee before add liquidity = ' + fee);
+
       await uniswapRouter.addLiquidityETH(
         sunnyBunnyToken.address,
         liquidityTokensAmount,
@@ -206,6 +209,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
       );
+
+      fee = await sunnyBunnyToken.getFeePercent();
+      console.log('fee after add liquidity = ' + fee);
 
       const reservesAfter = await pairUniswap.getReserves();
 
@@ -273,6 +279,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair before a swap = ' + balance);
 
+      let fee = await sunnyBunnyToken.getFeePercent();
+      console.log('fee before a swap = ' + fee);
+
       const reserves = await pairUniswap.getReserves();
       console.log('reserves[0] = ' + reserves[0]);
       console.log('reserves[1] = ' + reserves[1]);
@@ -286,6 +295,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       balance = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance sunnyBunnyToken of pair after a swap = ' + balance);
+
+      fee = await sunnyBunnyToken.getFeePercent();
+      console.log('fee after a swap = ' + fee);
     });
 
     it('success swap SunnyBunny tokens for ETH', async () => {

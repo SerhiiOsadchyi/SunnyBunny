@@ -46,12 +46,12 @@ contract SunnyBunny is ERC20, Ownable {
         return _feeReceiver;
     }
 
-    // A fee could not be bigger than 15%
+    // A fee could not be bigger than 15% 
     function setFeePercent(uint8 feePercent) public onlyOwner {
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
     }
-
+    
     function getFeePercent() view public returns(uint8) {
         return _feePercent;
     }
@@ -132,30 +132,26 @@ contract SunnyBunny is ERC20, Ownable {
         return true;
     }
 
-    /** @dev use function transfer() for Uniswap only */
-    function transferExceptUniswap(address recipient, uint256 amount) public returns (bool) {
+    /** @dev use function for transfers with fee  */
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
         _transfer(_msgSender(), recipient, amount, false);
         return true;
     }
 
-    /** @dev use function transferFrom() for Uniswap only */
-    function transferFromExceptUniswap(address sender, address recipient, uint256 amount) public returns (bool) {
-        bool result = _transferFromForChoice(sender, recipient, amount, false);
-        return result;
-    }
-
-    /** @dev use function transfer() for Uniswap only */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function transferForUniswap(address recipient, uint256 amount) public returns (bool) {
         _transfer(_msgSender(), recipient, amount, true);
         return true;
     }
 
-    /** @dev use function transferFrom() for Uniswap only */
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) public virtual override returns (bool) {
+    /** @dev use function for transfers with fee */
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+        bool result = _transferFromForChoice(sender, recipient, amount, false);
+        return result;
+    }
+
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function transferFromForUniswap(address sender, address recipient, uint256 amount) public returns (bool) {
         bool result = _transferFromForChoice(sender, recipient, amount, true);
         return result;
     }
