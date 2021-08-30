@@ -45,7 +45,7 @@ contract('Sunny Bunny token', function(accounts) {
 
     it('should be transfer tokens from owner to an any address without fee', async () => {
       const amount = bn('100').mul(baseUnit) ; // 100 tokens, fee is 10%
-      let eventLogs = await sunnyBunnyToken.transfer(NOT_OWNER, amount);
+      let eventLogs = await sunnyBunnyToken.transferWithFee(NOT_OWNER, amount);
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       const notOwnerBalance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
@@ -62,7 +62,7 @@ contract('Sunny Bunny token', function(accounts) {
       console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
 
       await sunnyBunnyToken.approve(EXTRA_ADDRESS, bn(amount));
-      await sunnyBunnyToken.transferFrom(OWNER, NOT_OWNER, amount, { from: EXTRA_ADDRESS });
+      await sunnyBunnyToken.transferFromWithFee(OWNER, NOT_OWNER, amount, { from: EXTRA_ADDRESS });
 
       const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       console.log('transferFrom balance NOT_OWNER After Send = ' + notOwnerBalanceAfterSend);
@@ -87,7 +87,7 @@ contract('Sunny Bunny token', function(accounts) {
       console.log('transferFrom balance NOT_OWNER Before Send = ' + notOwnerBalanceBeforeSend);
 
       await sunnyBunnyToken.approve(EXTRA_ADDRESS, bn(amountWithFee), { from: NOT_OWNER } );
-      await sunnyBunnyToken.transferFrom(NOT_OWNER, OWNER, amount, { from: EXTRA_ADDRESS });
+      await sunnyBunnyToken.transferFromWithFee(NOT_OWNER, OWNER, amount, { from: EXTRA_ADDRESS });
 
       const notOwnerBalanceAfterSend = await sunnyBunnyToken.balanceOf(NOT_OWNER);
       const ownerBalanceAfterSend = await sunnyBunnyToken.balanceOf(OWNER);
@@ -115,7 +115,7 @@ contract('Sunny Bunny token', function(accounts) {
       const feeReceiverBalanceBeforeSend = await sunnyBunnyToken.balanceOf(feeReceiver);
       const extraAddressBeforeSend = await sunnyBunnyToken.balanceOf(EXTRA_ADDRESS);
 
-      let eventLogs = await sunnyBunnyToken.transfer(EXTRA_ADDRESS, bn(amount),  { from: NOT_OWNER });
+      let eventLogs = await sunnyBunnyToken.transferWithFee(EXTRA_ADDRESS, bn(amount),  { from: NOT_OWNER });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       // Balances after a transaction

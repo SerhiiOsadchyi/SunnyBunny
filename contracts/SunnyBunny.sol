@@ -56,72 +56,53 @@ contract SunnyBunny is ERC20, Ownable {
         return _feePercent;
     }
 
-    /**@dev override native ERC20 function */
-    // !! Если не изменить _transfer, а сделать свою, то любой сможет вызвать ERC20 функцию transfer, которая работает без комиссии
-    function _transfer(
+    function _transferWithFee(
         address sender,
         address recipient,
-        uint256 amount,
-        bool isUni
+        uint256 amount
     ) internal {
             require(sender != address(0), "ERC20: transfer from the zero address");
             require(recipient != address(0), "ERC20: transfer to the zero address");
 
             _beforeTokenTransfer(sender, recipient, amount);
 
-            if (isUni == false) {
-                uint256 absoluteFee;
-                uint256 amountWithFee;
+            uint256 absoluteFee;
+            uint256 amountWithFee;
 
-                if(sender == owner()) {
-                    absoluteFee = 0;
-                    amountWithFee = amount;
-                } else (absoluteFee, amountWithFee) = calculateFee(amount);
+            if(sender == owner()) {
+                absoluteFee = 0;
+                amountWithFee = amount;
+            } else (absoluteFee, amountWithFee) = calculateFee(amount);
 
-                uint256 senderBalance = _balances[sender];
-                require(senderBalance >= amountWithFee, "ERC20: transfer amount exceeds balance");
-                unchecked {
-                    _balances[sender] = senderBalance - amountWithFee;
-                }
-                _balances[recipient] += amount;
-                _balances[_feeReceiver] += absoluteFee;
-
-                emit Transfer(sender, recipient, amount);
-                emit Transfer(sender, _feeReceiver, absoluteFee);
-            } else {
-                uint256 senderBalance = _balances[sender];
-                require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-                unchecked {
-                    _balances[sender] = senderBalance - amount;
-                }
-                _balances[recipient] += amount;
-
-                emit Transfer(sender, recipient, amount);
+            uint256 senderBalance = _balances[sender];
+            require(senderBalance >= amountWithFee, "ERC20: transfer amount exceeds balance");
+            unchecked {
+                _balances[sender] = senderBalance - amountWithFee;
             }
+            _balances[recipient] += amount;
+            _balances[_feeReceiver] += absoluteFee;
+
+            emit Transfer(sender, recipient, amount);
+            emit Transfer(sender, _feeReceiver, absoluteFee);
 
             _afterTokenTransfer(sender, recipient, amount);
     }
 
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function _transferFromForChoice(
+
+
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function transferWithFee(address recipient, uint256 amount) public returns (bool) {
+        _transferWithFee(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    /** @dev use function for transfers with fee */
+    function transferFromWithFee(
         address sender,
         address recipient,
-        uint256 amount,
-        bool isUni
-    ) internal returns (bool) {
-        _transfer(sender, recipient, amount, isUni);
+        uint256 amount
+    ) public returns (bool) {
+        _transferWithFee(sender, recipient, amount);
 
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
@@ -130,30 +111,6 @@ contract SunnyBunny is ERC20, Ownable {
         }
 
         return true;
-    }
-
-    /** @dev use function for transfers with fee  */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount, false);
-        return true;
-    }
-
-    /** @dev use function for Uniswap only or for transfers without fee */
-    function transferForUniswap(address recipient, uint256 amount) public returns (bool) {
-        _transfer(_msgSender(), recipient, amount, true);
-        return true;
-    }
-
-    /** @dev use function for transfers with fee */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        bool result = _transferFromForChoice(sender, recipient, amount, false);
-        return result;
-    }
-
-    /** @dev use function for Uniswap only or for transfers without fee */
-    function transferFromForUniswap(address sender, address recipient, uint256 amount) public returns (bool) {
-        bool result = _transferFromForChoice(sender, recipient, amount, true);
-        return result;
     }
 
     function calculateFee(uint256 amount) view internal returns (uint256, uint256) {
@@ -181,6 +138,53 @@ contract SunnyBunny is ERC20, Ownable {
     }
 
     ///////////  Below standard ERC20 functions almost \\\\\\\\\\\\\
+
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
+        _transfer(_msgSender(), recipient, amount);
+        return true;
+    }
+
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public virtual override returns (bool) {
+        _transfer(sender, recipient, amount);
+
+        uint256 currentAllowance = _allowances[sender][_msgSender()];
+        require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
+        unchecked {
+            _approve(sender, _msgSender(), currentAllowance - amount);
+        }
+
+        return true;
+    }
+
+    /** @dev use function for Uniswap only or for transfers without fee */
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal override {
+            require(sender != address(0), "ERC20: transfer from the zero address");
+            require(recipient != address(0), "ERC20: transfer to the zero address");
+
+            _beforeTokenTransfer(sender, recipient, amount);
+
+            uint256 senderBalance = _balances[sender];
+            require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+            unchecked {
+                _balances[sender] = senderBalance - amount;
+            }
+            _balances[recipient] += amount;
+
+            emit Transfer(sender, recipient, amount);
+
+
+            _afterTokenTransfer(sender, recipient, amount);
+    }
 
     /**
      * @dev See {IERC20-totalSupply}.
