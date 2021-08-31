@@ -69,10 +69,13 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
 
     // Use ETH
     function addLiquidETH(uint _amountToken) public payable {
-        // TODO - remove it if no need more
+        require(tokenSuB.balanceOf(_msgSender()) >= _amountToken, "Tokens amount is not enough");
         uint256 amountSendETH = msg.value;
+        address weth = uniswapV2Router.WETH();
+        address pair = uniswapV2Factory.getPair(tokenAddress, weth);
 
-        tokenSuB.transferFrom(_msgSender(), address(this), _amountToken);
+        //tokenSuB.transferFrom(_msgSender(), address(this), _amountToken);
+        tokenSuB.transfer(address(this), _amountToken);
         tokenSuB.approve(router, _amountToken);
 
         (uint amountToken, uint amountETH, uint liquidity) = uniswapV2Router.addLiquidityETH{value:  amountSendETH}(
@@ -84,29 +87,63 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
             block.timestamp
         );
 
+        IERC20(pair).transfer(_msgSender(), liquidity);
+
         emit Log("amount token  = ", amountToken);
         emit Log("amount ETH  = ", amountETH);
         emit Log("amount liquidity  = ", liquidity);
     }
 
-    function removeLiquid(uint _liquidity) external {
+    function removeLiquid(uint _liquidity) external { 
         // get address of Token pair Uniswap V2 LP
         address weth = uniswapV2Router.WETH();
         address pair = uniswapV2Factory.getPair(tokenAddress, weth);
+        require(IERC20(pair).balanceOf(_msgSender()) >= _liquidity, "Liquidity is not enough");
 
-        require(IERC20(pair).balanceOf(address(this)) >= _liquidity, "Liquidity is not enough");
-        IERC20(pair).approve(router, _liquidity);
+        address feeReceiver = tokenSuB.getFeeReceiver();
+        uint8 feePercent = tokenSuB.getFeePercent();
 
-        uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+        uint feeLiquidityAmount = _liquidity * feePercent / 100;
+        uint liquidityReturnToOwner = _liquidity - feeLiquidityAmount;
+
+        IERC20(pair).transfer(address(this), _liquidity);
+        //IERC20(pair).approve(router, _liquidity);
+        //IERC20(pair).approve(address(this), _liquidity);
+
+        /*if (_msgSender() == owner() || feeLiquidityAmount == 0) {
+            uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
             pair,
             _liquidity,
             0, // for change add _amountTokenMin like argument for this function
                 //and parent removeETHLiquidityFromToken()
             0, // for change add _amountETHMin to argument for this function
-            address(this), // for change add address _to like argument for this function
+            _msgSender(), // for change add address _to like argument for this function
                             //and parent removeETHLiquidityFromToken()
             block.timestamp + 20
         );
+        } else {
+            uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+                pair,
+                liquidityReturnToOwner,
+                0, // for change add _amountTokenMin like argument for this function
+                    //and parent removeETHLiquidityFromToken()
+                0, // for change add _amountETHMin to argument for this function
+                _msgSender(), // for change add address _to like argument for this function
+                                //and parent removeETHLiquidityFromToken()
+                block.timestamp + 20
+            );
+
+            uniswapV2Router.removeLiquidityETHSupportingFeeOnTransferTokens(
+                pair,
+                feeLiquidityAmount,
+                0, // for change add _amountTokenMin like argument for this function
+                    //and parent removeETHLiquidityFromToken()
+                0, // for change add _amountETHMin to argument for this function
+                feeReceiver, // for change add address _to like argument for this function
+                                //and parent removeETHLiquidityFromToken()
+                block.timestamp + 20
+            );
+        }      */
     }
 
     // **** SWAP ****
@@ -141,7 +178,7 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
                 1, swap.path, address(this), block.timestamp
         );
 
-        if (_msgSender() == owner()) {
+        if (_msgSender() == owner() || swap.feePercent == 0) {
             tokenSuB.transfer(_msgSender(), (tokensToSender + feeTokensAmount));
         } else {
             tokenSuB.transfer(_msgSender(),  tokensToSender);

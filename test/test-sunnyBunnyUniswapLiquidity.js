@@ -57,11 +57,6 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
     console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);
 
-    balance = await sunnyBunnyToken.balanceOf(OWNER);
-    console.log('balance sunnyBunnyToken OWNER = ' + balance);
-
-    await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)));
-
     console.log('OWNER address = ' + OWNER);
     console.log('uniswapRouter address = ' + uniswapRouter.address);
     console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
@@ -85,6 +80,11 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success add liquidity on pair', async () => {
       console.log('==================     add liquidity     ================');
 
+      balance = await sunnyBunnyToken.balanceOf(OWNER);
+      console.log('balance sunnyBunnyToken OWNER = ' + balance);
+      await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)));
+      console.log('balance sunnyBunny Token liquidity Instance = ' +  await sunnyBunnyToken.balanceOf(liquidityInstance.address));
+
       const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
       const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
 
@@ -92,8 +92,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       assertBNequal(reservesBefore[0], 0);
       assertBNequal(reservesBefore[1], 0);
 
-      await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
-
+      // TODO delete it if no need more
+     /* await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
       let eventLogs = await uniswapRouter.addLiquidityETH(
         sunnyBunnyToken.address,
         liquidityTokensAmount,
@@ -102,8 +102,15 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         OWNER,
         new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
-      );
+      );*/
+
+      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, {value: liquidityEtherAmount});
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
+
+      let liquidityAmount = await pairUniswap.balanceOf(liquidityInstance.address); 
+      console.log('liquidity Amount at liquidity Instance = ' + liquidityAmount);
+      liquidityAmount = await pairUniswap.balanceOf(OWNER); 
+      console.log('liquidity Amount at OWNER = ' + liquidityAmount);
 
       const reservesAfter = await pairUniswap.getReserves();
 
@@ -148,17 +155,26 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       let liquidityAmount = await pairUniswap.balanceOf(OWNER);
       console.log('balance OWNER liquidityAmount before remove liquidity = ' + liquidityAmount);
 
-      await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
+      //await pairUniswap.approve(uniswapRouter.address, liquidityAmount);
 
       // TODO - не работает, если комиссия больше 0
       //  Error: Returned error: VM Exception while processing transaction: revert TransferHelper:
       //  TRANSFER_FAILED -- Reason given: TransferHelper: TRANSFER_FAILED.
-      let eventLogs = await uniswapRouter.removeLiquidityETH(
+      /*let eventLogs = await uniswapRouter.removeLiquidityETH(
         sunnyBunnyToken.address, liquidityAmount, 0, 0, OWNER,
         new Date().getTime() + 3000
-      );
+      );*/
+      //let eventLogs = await liquidityInstance.removeLiquid(bn(liquidityAmount).div(bn('2')));
+      let eventLogs = await liquidityInstance.removeLiquid(liquidityAmount);
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
+      liquidityAmount = await pairUniswap.allowance(OWNER, uniswapRouter.address);
+      console.log('allowance Router liquidity Amount after remove liquidity = ' + liquidityAmount);
+      liquidityAmount = await pairUniswap.allowance(OWNER, liquidityInstance.address);
+      console.log('allowance liquidity Instance liquidity Amount after remove liquidity = ' + liquidityAmount);
+
+      liquidityAmount = await pairUniswap.balanceOf(liquidityInstance.address);
+      console.log('liquidity Amount at liquidity Instance  after remove liquidity = ' + liquidityAmount);
       liquidityAmount = await pairUniswap.balanceOf(OWNER);
       console.log('liquidity Amount at OWNER  after remove liquidity = ' + liquidityAmount);
 
@@ -178,8 +194,7 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
       const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
 
-      await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
-
+      /*await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
       await uniswapRouter.addLiquidityETH(
         sunnyBunnyToken.address,
         liquidityTokensAmount,
@@ -188,7 +203,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
         OWNER,
         new Date().getTime() + 3000,
         {value: liquidityEtherAmount}
-      );
+      );*/
+
+      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, {value: liquidityEtherAmount});
 
       const reservesAfter = await pairUniswap.getReserves();
 
@@ -309,9 +326,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       let balanceRouterTokens = await sunnyBunnyToken.balanceOf(pairAddress);
       console.log('balance Tokens at Uniswap from NOT_OWNER before remove liquidity = ' + balanceRouterTokens);
 
-      await pairUniswap.approve(uniswapRouter.address, balance);
+      //await pairUniswap.approve(uniswapRouter.address, balance);
 
-      await uniswapRouter.removeLiquidityETH(
+      /*await uniswapRouter.removeLiquidityETH(
         sunnyBunnyToken.address, liquidityReturnToOwner, 0, 0, OWNER,
         new Date().getTime() + 3000
       );
@@ -319,7 +336,9 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       await uniswapRouter.removeLiquidityETH(
         sunnyBunnyToken.address, feeLiquidityAmount, 0, 0, feeReceiver,
         new Date().getTime() + 3000
-      );
+      );*/
+
+      let eventLogs = await liquidityInstance.removeLiquid(balance);
 
       const reservesAfter = await pairUniswap.getReserves();
 
