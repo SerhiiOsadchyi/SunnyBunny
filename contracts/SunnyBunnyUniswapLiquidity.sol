@@ -120,19 +120,10 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         uniswapPair = IUniswapV2Pair(swap.pairAddress);
         (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
         uint tokensToSender = uniswapV2Router.quote(swap.amountETH, reserveETH, reserveSub);
-        uint feeTokensAmount = tokensToSender * swap.feePercent / 100;
 
         uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amountSendETH} (
                 1, swap.path, address(this), block.timestamp
         );
-
-        tokenSuB.transferWithFee(_msgSender(), (tokensToSender + feeTokensAmount));
-        /*if (_msgSender() == owner() || swap.feePercent == 0) {
-            tokenSuB.transfer(_msgSender(), (tokensToSender + feeTokensAmount));
-        } else {
-            tokenSuB.transfer(_msgSender(),  tokensToSender);
-            tokenSuB.transfer(swap.feeReceiver,  feeTokensAmount);
-        }*/
     }
 
     //TODO make sure:   Swap for ETH/SuB pair
@@ -152,17 +143,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         );
     }
 
-        function removeLiquid(uint _liquidity) external { 
+    function removeLiquid(uint _liquidity) external {
         address payable sender = payable(_msgSender());
-
-        // get address of Token pair Uniswap V2 LP
-        address weth = uniswapV2Router.WETH();
-        address pairAddress = uniswapV2Factory.getPair(tokenAddress, weth);
-        uniswapPair = IUniswapV2Pair(pairAddress);
-        //require(uniswapPair.balanceOf(_msgSender()) >= _liquidity, "Liquidity is not enough");
-
-        address feeReceiver = tokenSuB.getFeeReceiver();
-        uint8 feePercent = tokenSuB.getFeePercent();
 
         uniswapPair.approve(router, _liquidity);
 
@@ -178,17 +160,8 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
             block.timestamp + 20
         );
 
-        uint feeTokenAmount = amountToken * feePercent / 100;
-        uint tokensToOwner = amountToken - feeTokenAmount;
-
-        //sender.transfer(amountETH);
-
-        /*if (_msgSender() == owner() || feePercent == 0) {
-            tokenSuB.transfer(_msgSender(), amountToken);
-        } else {
-            tokenSuB.transfer(_msgSender(),  tokensToOwner);
-            tokenSuB.transfer(feeReceiver,  feeTokenAmount);
-        }*/
+        sender.transfer(amountETH);
+        tokenSuB.transferWithFee(_msgSender(), amountToken);
     }
 
     //TODO remove if no need

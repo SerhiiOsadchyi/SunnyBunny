@@ -54,8 +54,8 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     pairAddress = await sunnyBunnyToken.tokenUniswapPair();
     pairUniswap = await IUniswapV2Pair.at(pairAddress);
 
-    let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
-    console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);
+    //let approvedTokensToRouter = await sunnyBunnyToken.allowance(OWNER, uniswapRouter.address);
+    //console.log('approved sunnyBunnyToken To Router = ' + approvedTokensToRouter);
 
     console.log('OWNER address = ' + OWNER);
     console.log('uniswapRouter address = ' + uniswapRouter.address);
@@ -144,28 +144,35 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       console.log('==================     remove liquidity by OWNER     ================');
 
       let liquidityAmountOWNER = await pairUniswap.balanceOf(OWNER);
-      console.log('liquidity Amount balance OWNER before remove liquidity = ' + liquidityAmount);
-      let liquidityAmount = await pairUniswap.balanceOf(NOT_OWNER);
-      console.log('liquidity Amount balance NOT_OWNER before remove liquidity = ' + liquidityAmount);
+
+      /*
+        let liquidityAmount = await pairUniswap.balanceOf(NOT_OWNER);
+        console.log('liquidity Amount balance OWNER before remove liquidity = ' + liquidityAmountOWNER);
+        console.log('liquidity Amount balance NOT_OWNER before remove liquidity = ' + liquidityAmount);
+      */
 
       await pairUniswap.transfer(liquidityInstance.address, liquidityAmountOWNER);
 
-      balance = await sunnyBunnyToken.balanceOf(feeReceiver);
-      console.log('token balance fee Receiver before remove liquidity = ' + balance);
-      balance = await sunnyBunnyToken.balanceOf(OWNER);
-      console.log('token balance OWNER before remove liquidity = ' + balance);
-      balance = await web3.eth.getBalance(OWNER);
-      console.log('ETH balance OWNER before remove liquidity = ' + balance);
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver before remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(OWNER);
+        console.log('token balance OWNER before remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(OWNER);
+        console.log('ETH balance OWNER before remove liquidity = ' + balance);
+      */
 
-      let eventLogs = await liquidityInstance.removeLiquid(liquidityAmount);
+      let eventLogs = await liquidityInstance.removeLiquid(liquidityAmountOWNER);
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      balance = await sunnyBunnyToken.balanceOf(feeReceiver);
-      console.log('token balance fee Receiver after remove liquidity = ' + balance);
-      balance = await sunnyBunnyToken.balanceOf(OWNER);
-      console.log('token balance OWNER after remove liquidity = ' + balance);
-      balance = await web3.eth.getBalance(OWNER);
-      console.log('ETH balance OWNER after remove liquidity = ' + balance);
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver after remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(OWNER);
+        console.log('token balance OWNER after remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(OWNER);
+        console.log('ETH balance OWNER after remove liquidity = ' + balance);
+      */
 
       //assertBNequal(liquidityAmount, 0);
     });
@@ -352,8 +359,10 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       let eventLogs = await liquidityInstance.swapExactTokensForETH(bn(amount).div(bn("2")), 0);
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      balance = await weth.balanceOf(pairAddress);
-      console.log('balance weth of pair after a swap = ' + balance);
+      /*
+        balance = await weth.balanceOf(pairAddress);
+        console.log('balance weth of pair after a swap = ' + balance);
+      */
 
       // !! todo - как это работает?
     /**  if (address(config.infinityToken) < address(config.weth)) {*/
@@ -364,35 +373,37 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success remove liquidity on pair with 10% of fee', async () => {
       console.log('==================     remove liquidity with 10% of fee     ================');
 
-      balance = await pairUniswap.balanceOf(OWNER);
-      console.log('balance pair OWNER before remove liquidity = ' + balance);
-      let feeLiquidityAmount = bn(balance).mul(bn(feePercent)).div(bn('100'));
-      let liquidityReturnToOwner = bn(balance).sub(bn(feeLiquidityAmount));
+      let liquidityAmount = await pairUniswap.balanceOf(OWNER);
+      await pairUniswap.transfer(liquidityInstance.address, liquidityAmount);
 
-      //TODO почему баланс пары не зависит от адреса пользователя ?
-      let balanceRouterTokens = await sunnyBunnyToken.balanceOf(pairAddress);
-      console.log('balance Tokens at Uniswap from NOT_OWNER before remove liquidity = ' + balanceRouterTokens);
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver before remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(OWNER);
+        console.log('token balance OWNER before remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(OWNER);
+        console.log('ETH balance OWNER before remove liquidity = ' + balance);
+      */
 
-      //await pairUniswap.approve(uniswapRouter.address, balance);
+      let eventLogs = await liquidityInstance.removeLiquid(liquidityAmount);
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      /*await uniswapRouter.removeLiquidityETH(
-        sunnyBunnyToken.address, liquidityReturnToOwner, 0, 0, OWNER,
-        new Date().getTime() + 3000
-      );
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver after remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(OWNER);
+        console.log('token balance OWNER after remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(OWNER);
+        console.log('ETH balance OWNER after remove liquidity = ' + balance);
+      */
 
-      await uniswapRouter.removeLiquidityETH(
-        sunnyBunnyToken.address, feeLiquidityAmount, 0, 0, feeReceiver,
-        new Date().getTime() + 3000
-      );*/
-
-      let eventLogs = await liquidityInstance.removeLiquid(balance);
-
-      const reservesAfter = await pairUniswap.getReserves();
-
-      checkLiquidityAmount = await pairUniswap.balanceOf(OWNER);
-      console.log('liquidity Amount at OWNER  after remove liquidity = ' + checkLiquidityAmount);
-      console.log('reservesAfter[0] = ' + reservesAfter[0]);
-      console.log('reservesAfter[1] = ' + reservesAfter[1]);
+      /*
+        const reservesAfter = await pairUniswap.getReserves();
+        checkLiquidityAmount = await pairUniswap.balanceOf(OWNER);
+        console.log('liquidity Amount at OWNER  after remove liquidity = ' + checkLiquidityAmount);
+        console.log('reservesAfter[0] = ' + reservesAfter[0]);
+        console.log('reservesAfter[1] = ' + reservesAfter[1]);
+      */
 
       //assertBNequal(checkLiquidityAmount, 0);
 
@@ -404,22 +415,26 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
       let liquidityAmount = await pairUniswap.balanceOf(NOT_OWNER);
       await pairUniswap.transfer(liquidityInstance.address, liquidityAmount, { from: NOT_OWNER });
 
-      balance = await sunnyBunnyToken.balanceOf(feeReceiver);
-      console.log('token balance fee Receiver before remove liquidity = ' + balance);
-      balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-      console.log('token balance NOT_OWNER before remove liquidity = ' + balance);
-      balance = await web3.eth.getBalance(NOT_OWNER);
-      console.log('ETH balance NOT_OWNER before remove liquidity = ' + balance);
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver before remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+        console.log('token balance NOT_OWNER before remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(NOT_OWNER);
+        console.log('ETH balance NOT_OWNER before remove liquidity = ' + balance);
+      */
 
       let eventLogs = await liquidityInstance.removeLiquid(liquidityAmount, { from: NOT_OWNER });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      balance = await sunnyBunnyToken.balanceOf(feeReceiver);
-      console.log('token balance fee Receiver after remove liquidity = ' + balance);
-      balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-      console.log('token balance OWNER after remove liquidity = ' + balance);
-      balance = await web3.eth.getBalance(NOT_OWNER);
-      console.log('ETH balance OWNER after remove liquidity = ' + balance);
+      /*
+        balance = await sunnyBunnyToken.balanceOf(feeReceiver);
+        console.log('token balance fee Receiver after remove liquidity = ' + balance);
+        balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
+        console.log('token balance NOT_OWNER after remove liquidity = ' + balance);
+        balance = await web3.eth.getBalance(NOT_OWNER);
+        console.log('ETH balance NOT_OWNER after remove liquidity = ' + balance);
+      */
 
       //assertBNequal(liquidityAmount, 0);
     });
