@@ -62,16 +62,6 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     console.log('sunnyBunnyToken address = ' + sunnyBunnyToken.address);
     console.log('liquidityInstance address = ' + liquidityInstance.address);
     console.log('pairUniswap address = ' + pairAddress);
-
-    // TODO: send 1 ether to contract "SunnyBunnyUniswapLiquidity" - remove it if no need
-    /*await liquidityInstance.send(BASE_UNIT);
-      let balanceETH = await web3.eth.getBalance(liquidityInstance.address);
-      console.log('balance ETH liquidityInstance contract = ' + balanceETH);
-
-      await uniswapRouter.send(BASE_UNIT);
-      balanceETH = await web3.eth.getBalance(uniswapRouter.address);
-      console.log('balance ETH uniswapRouter = ' + balanceETH);
-    */
   });
 
   describe('General tests with 0% of fee', async () => {
@@ -82,71 +72,40 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
 
       balance = await sunnyBunnyToken.balanceOf(OWNER);
       console.log('balance sunnyBunnyToken OWNER = ' + balance);
-      await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)));
+
+      let liquidityTokenAmount = bn('100').mul(bn(BASE_UNIT)); // 100 tokens
+      let feeLiquidityTokenAmount = bn(liquidityTokenAmount).mul(bn(feePercent)).div(bn(100));
+      let tokenAmountForLiquidity = bn(liquidityTokenAmount).add(bn(feeLiquidityTokenAmount));
+
+      await sunnyBunnyToken.transferWithFee(liquidityInstance.address, tokenAmountForLiquidity);
       console.log('balance sunnyBunny Token liquidity Instance = ' +  await sunnyBunnyToken.balanceOf(liquidityInstance.address));
+      const liquidityEtherAmount = bn('10').mul(bn(BASE_UNIT)); // 10 ETH
 
-      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
-      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
-
-      const reservesBefore = await pairUniswap.getReserves();
-      assertBNequal(reservesBefore[0], 0);
-      assertBNequal(reservesBefore[1], 0);
-
-      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, {value: liquidityEtherAmount});
+      let eventLogs = await liquidityInstance.addLiquidETH(tokenAmountForLiquidity, {value: liquidityEtherAmount});
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      let liquidityAmount = await pairUniswap.balanceOf(liquidityInstance.address); 
-      console.log('liquidity Amount at liquidity Instance = ' + liquidityAmount);
       liquidityAmount = await pairUniswap.balanceOf(OWNER); 
       console.log('liquidity Amount at OWNER = ' + liquidityAmount);
-
-      const reservesAfter = await pairUniswap.getReserves();
-
-      if (await pairUniswap.token0() == sunnyBunnyToken.address) {
-        assertBNequal(reservesAfter[0], liquidityTokensAmount);
-        assertBNequal(reservesAfter[1], liquidityEtherAmount);
-      } else {
-        assertBNequal(reservesAfter[0], liquidityEtherAmount);
-        assertBNequal(reservesAfter[1], liquidityTokensAmount);
-      }
     });
 
     it('success add liquidity on pair by  NOT_OWNER', async () => {
       console.log('==================     add liquidity by NOT_OWNER   ================');
 
-      await sunnyBunnyToken.transfer(NOT_OWNER, bn(balance).div(bn(20)));
+      await sunnyBunnyToken.transferWithFee(NOT_OWNER, bn(balance).div(bn(20)));
       balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-      await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)), { from: NOT_OWNER });
-      let balanceTokenLiquidityInstance =  await sunnyBunnyToken.balanceOf(liquidityInstance.address, { from: NOT_OWNER })
-      console.log('balance sunnyBunny Token liquidity Instance = ' + balanceTokenLiquidityInstance);
 
-      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
-      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
+      let liquidityTokenAmount = bn('5').mul(bn(BASE_UNIT)); // 5 tokens
+      let feeLiquidityTokenAmount = bn(liquidityTokenAmount).mul(bn(feePercent)).div(bn(100));
+      let tokenAmountForLiquidity = bn(liquidityTokenAmount).add(bn(feeLiquidityTokenAmount));
 
-      /*const reservesBefore = await pairUniswap.getReserves();
-      assertBNequal(reservesBefore[0], 0);
-      assertBNequal(reservesBefore[1], 0);*/
+      await sunnyBunnyToken.transferWithFee(liquidityInstance.address, tokenAmountForLiquidity, { from: NOT_OWNER });
+      const liquidityEtherAmount = bn('5').mul(bn(BASE_UNIT)).div(bn(10)); // 0.5 ETH
 
-      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, { from: NOT_OWNER, value: liquidityEtherAmount });
+      let eventLogs = await liquidityInstance.addLiquidETH(tokenAmountForLiquidity, { from: NOT_OWNER, value: liquidityEtherAmount });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       liquidityAmount = await pairUniswap.balanceOf(NOT_OWNER); 
-      console.log('liquidity Amount at OWNER = ' + liquidityAmount);
-
-      /*
-      let liquidityAmount = await pairUniswap.balanceOf(liquidityInstance.address); 
-      console.log('liquidity Amount at liquidity Instance = ' + liquidityAmount);
-
-      const reservesAfter = await pairUniswap.getReserves();
-
-      if (await pairUniswap.token0() == sunnyBunnyToken.address) {
-        assertBNequal(reservesAfter[0], liquidityTokensAmount);
-        assertBNequal(reservesAfter[1], liquidityEtherAmount);
-      } else {
-        assertBNequal(reservesAfter[0], liquidityEtherAmount);
-        assertBNequal(reservesAfter[1], liquidityTokensAmount);
-      }
-      */
+      console.log('liquidity Amount at NOT_OWNER = ' + liquidityAmount);
     });
 
     it('success swap ETH for SunnyBunny tokens', async () => {
@@ -237,36 +196,20 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success add liquidity on pair', async () => {
       console.log('==================     add liquidity with 10% of fee    ================');
 
-      await sunnyBunnyToken.setFeePercent(10);
-      feePercent = await sunnyBunnyToken.getFeePercent();
+      balance = await sunnyBunnyToken.balanceOf(OWNER);
 
-      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
-      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
+      let liquidityTokenAmount = bn('100').mul(bn(BASE_UNIT)); // 100 tokens
+      let feeLiquidityTokenAmount = bn(liquidityTokenAmount).mul(bn(feePercent)).div(bn(100));
+      let tokenAmountForLiquidity = bn(liquidityTokenAmount).add(bn(feeLiquidityTokenAmount));
 
-      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, {value: liquidityEtherAmount});
+      await sunnyBunnyToken.transferWithFee(liquidityInstance.address, tokenAmountForLiquidity);
+      const liquidityEtherAmount = bn('10').mul(bn(BASE_UNIT)); // 10 ETH
 
-      /*
-        await sunnyBunnyToken.approve(uniswapRouter.address, liquidityTokensAmount);
-        await uniswapRouter.addLiquidityETH(
-          sunnyBunnyToken.address,
-          liquidityTokensAmount,
-          0,
-          0,
-          OWNER,
-          new Date().getTime() + 3000,
-          {value: liquidityEtherAmount}
-        );
+      let eventLogs = await liquidityInstance.addLiquidETH(tokenAmountForLiquidity, {value: liquidityEtherAmount});
+      truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
-      const reservesAfter = await pairUniswap.getReserves();
-
-        if (await pairUniswap.token0() == sunnyBunnyToken.address) {
-          console.log('liquidity Tokens Amount = ' + reservesAfter[0]);
-          console.log('liquidity Ether Amount = ' + reservesAfter[1]);
-        } else {
-          console.log('liquidity Tokens Amount = ' + reservesAfter[1]);
-          console.log('liquidity Ether Amount = ' + reservesAfter[0]);
-        }
-      */
+      liquidityAmount = await pairUniswap.balanceOf(OWNER); 
+      console.log('liquidity Amount at OWNER = ' + liquidityAmount);
     });
 
     //Use add liquidity from original Uniswap
@@ -300,39 +243,21 @@ contract('Sunny Bunny and Uniswap liquidity', function(accounts) {
     it('success add liquidity on pair by  NOT_OWNER with 10% of fee', async () => {
       console.log('==================     add liquidity by NOT_OWNER with 10% of fee  ================');
 
-      await sunnyBunnyToken.transfer(NOT_OWNER, bn(balance).div(bn(20)));
+      await sunnyBunnyToken.transferWithFee(NOT_OWNER, bn(balance).div(bn(20)));
       balance = await sunnyBunnyToken.balanceOf(NOT_OWNER);
-      await sunnyBunnyToken.transfer(liquidityInstance.address, bn(balance).div(bn(10)), { from: NOT_OWNER });
-      let balanceTokenLiquidityInstance =  await sunnyBunnyToken.balanceOf(liquidityInstance.address, { from: NOT_OWNER })
-      console.log('balance sunnyBunny Token liquidity Instance = ' + balanceTokenLiquidityInstance);
 
-      const liquidityTokensAmount = bn('100').mul(BASE_UNIT); // 100 tokens
-      const liquidityEtherAmount = bn('10').mul(BASE_UNIT); // 10 ETH
+      let liquidityTokenAmount = bn('5').mul(bn(BASE_UNIT)); // 5 tokens
+      let feeLiquidityTokenAmount = bn(liquidityTokenAmount).mul(bn(feePercent)).div(bn(100));
+      let tokenAmountForLiquidity = bn(liquidityTokenAmount).add(bn(feeLiquidityTokenAmount));
 
-      /*const reservesBefore = await pairUniswap.getReserves();
-      assertBNequal(reservesBefore[0], 0);
-      assertBNequal(reservesBefore[1], 0);*/
+      await sunnyBunnyToken.transferWithFee(liquidityInstance.address, tokenAmountForLiquidity, { from: NOT_OWNER });
+      const liquidityEtherAmount = bn('5').mul(bn(BASE_UNIT)).div(bn(10)); // 0.5 ETH
 
-      let eventLogs = await liquidityInstance.addLiquidETH(liquidityTokensAmount, { from: NOT_OWNER, value: liquidityEtherAmount });
+      let eventLogs = await liquidityInstance.addLiquidETH(tokenAmountForLiquidity, { from: NOT_OWNER, value: liquidityEtherAmount });
       truffleAssert.prettyPrintEmittedEvents(eventLogs);
 
       liquidityAmount = await pairUniswap.balanceOf(NOT_OWNER); 
-      console.log('liquidity Amount at OWNER = ' + liquidityAmount);
-
-      /*
-      let liquidityAmount = await pairUniswap.balanceOf(liquidityInstance.address); 
-      console.log('liquidity Amount at liquidity Instance = ' + liquidityAmount);
-
-      const reservesAfter = await pairUniswap.getReserves();
-
-      if (await pairUniswap.token0() == sunnyBunnyToken.address) {
-        assertBNequal(reservesAfter[0], liquidityTokensAmount);
-        assertBNequal(reservesAfter[1], liquidityEtherAmount);
-      } else {
-        assertBNequal(reservesAfter[0], liquidityEtherAmount);
-        assertBNequal(reservesAfter[1], liquidityTokensAmount);
-      }
-      */
+      console.log('liquidity Amount at NOT_OWNER = ' + liquidityAmount);
     });
 
     it('success swap ETH for SunnyBunny tokens from OWNER with 10% of fee', async () => {
