@@ -94,7 +94,65 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
         emit Log("amount liquidity  = ", liquidity);
     }
 
-    function removeLiquid(uint _liquidity) external { 
+    // **** SWAP ****
+    // requires the initial amount to have already been sent to the first pair
+
+    // !! todo - как это понимать?!!
+    /**  if (address(config.infinityToken) < address(config.weth)) {*/
+
+    //TODO make sure:  **** Swap for SuB/ETH pair ****
+
+    //TODO make sure: sell tokens at a maximum price
+    // WETH for tokens
+    function swapExactETHForTokens() public payable {
+        uint256 amountSendETH = msg.value;
+        swap.feeReceiver = tokenSuB.getFeeReceiver();
+
+        swap.weth = uniswapV2Router.WETH();
+        swap.path = new address[](2);
+        swap.path[0] = swap.weth;
+        swap.path[1] = tokenAddress;
+        swap.feePercent = tokenSuB.getFeePercent();
+        swap.feeETHAmount = swap.feePercent * amountSendETH / 100;
+        swap.amountETH = amountSendETH - swap.feeETHAmount;
+        swap.pairAddress = uniswapV2Factory.getPair(swap.weth, tokenAddress);
+
+        uniswapPair = IUniswapV2Pair(swap.pairAddress);
+        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
+        uint tokensToSender = uniswapV2Router.quote(swap.amountETH, reserveETH, reserveSub);
+        uint feeTokensAmount = tokensToSender * swap.feePercent / 100;
+
+        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amountSendETH} (
+                1, swap.path, address(this), block.timestamp
+        );
+
+        tokenSuB.transferWithFee(_msgSender(), (tokensToSender + feeTokensAmount));
+        /*if (_msgSender() == owner() || swap.feePercent == 0) {
+            tokenSuB.transfer(_msgSender(), (tokensToSender + feeTokensAmount));
+        } else {
+            tokenSuB.transfer(_msgSender(),  tokensToSender);
+            tokenSuB.transfer(swap.feeReceiver,  feeTokensAmount);
+        }*/
+    }
+
+    //TODO make sure:   Swap for ETH/SuB pair
+
+    //TODO make sure: sell tokens at maximum price
+    function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
+        address weth = uniswapV2Router.WETH();
+        address[] memory path = new address[](2);
+        path[0] = tokenAddress;
+        path[1] = weth;
+
+        tokenSuB.approve(router, _amountIn);
+
+        // @author use swapExactTokensForETH for token without fee
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+                _amountIn, _amountOutMin, path, address(this), block.timestamp
+        );
+    }
+
+        function removeLiquid(uint _liquidity) external { 
         address payable sender = payable(_msgSender());
 
         // get address of Token pair Uniswap V2 LP
@@ -131,63 +189,6 @@ contract SunnyBunnyUniswapLiquidity is Ownable {
             tokenSuB.transfer(_msgSender(),  tokensToOwner);
             tokenSuB.transfer(feeReceiver,  feeTokenAmount);
         }*/
-    }
-
-    // **** SWAP ****
-    // requires the initial amount to have already been sent to the first pair
-
-    // !! todo - как это понимать?!!
-    /**  if (address(config.infinityToken) < address(config.weth)) {*/
-
-    //TODO make sure:  **** Swap for SuB/ETH pair ****
-
-    //TODO make sure: sell tokens at a maximum price
-    // WETH for tokens
-    function swapExactETHForTokens() public payable {
-        uint256 amountSendETH = msg.value;
-        swap.feeReceiver = tokenSuB.getFeeReceiver();
-
-        swap.weth = uniswapV2Router.WETH();
-        swap.path = new address[](2);
-        swap.path[0] = swap.weth;
-        swap.path[1] = tokenAddress;
-        swap.feePercent = tokenSuB.getFeePercent();
-        swap.feeETHAmount = swap.feePercent * amountSendETH / 100;
-        swap.amountETH = amountSendETH - swap.feeETHAmount;
-        swap.pairAddress = uniswapV2Factory.getPair(swap.weth, tokenAddress);
-
-        uniswapPair = IUniswapV2Pair(swap.pairAddress);
-        (uint reserveETH, uint reserveSub, ) = uniswapPair.getReserves();
-        uint tokensToSender = uniswapV2Router.quote(swap.amountETH, reserveETH, reserveSub);
-        uint feeTokensAmount = tokensToSender * swap.feePercent / 100;
-
-        uniswapV2Router.swapExactETHForTokensSupportingFeeOnTransferTokens{value: amountSendETH} (
-                1, swap.path, address(this), block.timestamp
-        );
-
-        if (_msgSender() == owner() || swap.feePercent == 0) {
-            tokenSuB.transfer(_msgSender(), (tokensToSender + feeTokensAmount));
-        } else {
-            tokenSuB.transfer(_msgSender(),  tokensToSender);
-            tokenSuB.transfer(swap.feeReceiver,  feeTokensAmount);
-        }
-    }
-
-    //TODO make sure:   Swap for ETH/SuB pair
-
-    //TODO make sure: sell tokens at maximum price
-    function swapExactTokensForETH(uint _amountIn, uint _amountOutMin) public {
-        address weth = uniswapV2Router.WETH();
-        address[] memory path = new address[](2);
-        path[0] = tokenAddress;
-        path[1] = weth;
-
-        tokenSuB.approve(router, _amountIn);
-
-        // @author use swapExactTokensForETH for token without fee
-        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-                _amountIn, _amountOutMin, path, address(this), block.timestamp
-        );
     }
 
     //TODO remove if no need

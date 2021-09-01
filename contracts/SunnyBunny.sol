@@ -51,7 +51,7 @@ contract SunnyBunny is ERC20, Ownable {
         require(15 >= feePercent, "A fee might to be set to 15% or less");
         _feePercent = feePercent;
     }
-    
+
     function getFeePercent() view public returns(uint8) {
         return _feePercent;
     }
